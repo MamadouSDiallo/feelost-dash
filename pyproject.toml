@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "feelost-dash"
+version = "0.1.0"
+description = ""
+authors = ["Mamadou S Diallo <me@msdiallo.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+polars = {extras = ["numpy", "pandas"], version = "^0.20.5"}
+plotly = "^5.18.0"
+dash = "^2.14.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
