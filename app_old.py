@@ -1,6 +1,4 @@
 # Import packages
-
-import dash
 from dash import Dash, html, dcc
 import dash_auth
 import dash_bootstrap_components as dbc
@@ -15,7 +13,6 @@ app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.FLATLY])
 
 auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 
-app.title = "FeeLoST"
 
 nav_menu = dbc.Nav(
     id="nav-bar",
@@ -29,6 +26,7 @@ nav_menu = dbc.Nav(
         dbc.NavLink(children="Disabled", disabled=True, href="/"),
     ],
 )
+
 
 about = html.Div(html.H6("About FeeLoST"), id="about")
 
@@ -45,10 +43,40 @@ app.layout = html.Div(
         ),
         nav_menu,
         dbc.Container(id="page-content"),
-        dash.page_container,
-    ],
-    className="all",
+        # html.Div(children=[about, outliers, datasets], style={"display": "block"}),
+    ]
+    # children=[
+    #     html.H1("Feedback Loop System (FeeLoST)", style={"textAlign": "center"}),
+    #     dcc.Tabs(
+    #         id="tabs-feelost",
+    #         value="tab-value",
+    #         children=[
+    #             dcc.Tab(label="Tab One", value="tab-1-example-graph"),
+    #             dcc.Tab(label="Tab Two", value="tab-2-example-graph"),
+    #         ],
+    #     ),
+    # ]
 )
+
+
+# Add controls to build the interaction
+# @app.callback(
+#     Output(component_id="page-content", component_property="children"),
+#     Input(component_id="url", component_property="pathname"),
+# )
+# def render_page(pathname):
+#     if pathname in ["/", "/about"]:
+#         return about
+#     elif pathname in ["/datasets"]:
+#         return datasets_fe
+#     elif pathname in ["/outliers"]:
+#         return outliers
+#     else:
+#         return html.P("This is else")
+
+
+# def dataset_table():
+#     return datasets_be()
 
 
 # Run the app
