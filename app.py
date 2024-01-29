@@ -30,10 +30,6 @@ nav_menu = dbc.Nav(
     ],
 )
 
-about = html.Div(html.H6("About FeeLoST"), id="about")
-
-outliers = html.Div(html.H6("Outliers"), id="outliers")
-
 # App layout
 app.layout = html.Div(
     children=[
@@ -47,7 +43,7 @@ app.layout = html.Div(
         dbc.Container(id="page-content"),
         dash.page_container,
     ],
-    className="all",
+    # className="all",
 )
 
 

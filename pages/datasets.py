@@ -30,50 +30,63 @@ months = [
     "November",
     "December",
 ]
+quarters = ["Q1", "Q2", "Q3", "Q4"]
 
 layout = html.Div(
     id="datasets",
     children=[
-        dbc.Card(
-            dbc.CardBody(
-                [
-                    html.Div(
-                        children=[
-                            # html.H6("Datasets"),
-                            html.Br(),
-                            html.Label("Dataset"),
-                            dcc.Dropdown(id="datasets-list", options=datasets_list, value="hf_list"),
-                            html.Br(),
-                            html.Label("Number of rows"),
-                            html.Div(dcc.Input(id="number-rows", type="number", value=15)),
-                            html.Br(),
-                            html.Br(),
-                            html.Label("Time period (in years)"),
-                            dcc.RangeSlider(
-                                id="selected-years",
-                                min=2012,
-                                max=2020,
-                                step=1,
-                                value=[2014, 2014],
-                                marks={i: str(i) for i in range(2012, 2021, 2)},
-                            ),
-                            html.Br(),
-                            html.Label("Months of interest"),
-                            dcc.Dropdown(id="selected-months", options=months, value="All", multi=True),
-                        ],
-                        style={"padding": 10, "flex": 1},
-                    ),
-                    html.Div(
-                        id="datatable-id",
-                        style={"padding": 10, "flex": 3},
-                        # className="row",
-                    ),
-                ],
-                style={"display": "flex", "flexDirection": "row", "width": "100%"},
-                className="all",
+        html.Div(
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        html.Div(
+                            children=[
+                                # html.H6("Datasets"),
+                                html.Br(),
+                                html.Label("Dataset"),
+                                dcc.Dropdown(id="datasets-list", options=datasets_list, value="hf_list"),
+                                html.Br(),
+                                html.Label("Number of rows"),
+                                html.Div(dcc.Input(id="number-rows", type="number", value=15)),
+                                html.Br(),
+                                html.Br(),
+                                html.Label("Time period (in years)"),
+                                dcc.RangeSlider(
+                                    id="selected-years",
+                                    min=2012,
+                                    max=2020,
+                                    step=1,
+                                    value=[2014, 2014],
+                                    marks={i: str(i) for i in range(2012, 2021, 2)},
+                                ),
+                                html.Br(),
+                                html.Label("Quarters of interest"),
+                                dcc.Dropdown(id="selected-quarters", options=quarters, value="All", multi=True),
+                                html.Br(),
+                                html.Label("Months of interest"),
+                                dcc.Dropdown(id="selected-months", options=months, value="All", multi=True),
+                            ],
+                        )
+                    ]
+                )
             ),
-        )
+            style={"padding": 10, "flex": 1},
+        ),
+        html.Div(
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        html.Div(
+                            id="datatable-id",
+                        ),
+                    ],
+                ),
+            ),
+            style={"padding": 10, "flex": 3},
+        ),
     ],
+    style={"display": "flex", "flexDirection": "row", "gap": "5px", "width": "100%"},
+    className="all",
 )
 
 
@@ -116,11 +129,11 @@ def datasets_server(datasets_names, number_rows, selected_years, selected_months
             "overflowX": "auto",
             "maxWidth": "900px",
         },
-        style_cell={
-            # "overflow": "hidden",
-            # "textOverflow": "ellipsis",
-            # "minWidth": "180px",
-            # "width": "180px",
-            # "maxWidth": "180px",
-        },
+        # style_cell={
+        #     # "overflow": "hidden",
+        #     # "textOverflow": "ellipsis",
+        #     # "minWidth": "180px",
+        #     # "width": "180px",
+        #     # "maxWidth": "180px",
+        # },
     )

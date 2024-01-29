@@ -13,7 +13,7 @@ hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
 epi_df = pl.read_csv("./data/input/epi_df.csv")
 
 
-datasets_list = ["hf_list", "epi", "rmh"]
+datasets_list = ["epi", "rmh"]
 months = [
     "All",
     "January",
@@ -29,7 +29,7 @@ months = [
     "November",
     "December",
 ]
-
+quarters = ["Q1", "Q2", "Q3", "Q4"]
 
 layout = html.Div(
     children=[
@@ -56,10 +56,12 @@ layout = html.Div(
                             marks={i: str(i) for i in range(2012, 2021, 2)},
                         ),
                         html.Br(),
+                        html.Label("Quarters of interest"),
+                        dcc.Dropdown(id="selected-quarters", options=quarters, value="All", multi=True),
+                        html.Br(),
                         html.Label("Months of interest"),
                         dcc.Dropdown(id="selected-months", options=months, value="All", multi=True),
                     ],
-                    # style={"padding": 10, "flex": 1},
                 )
             ),
             style={"padding": 10, "flex": 1},
