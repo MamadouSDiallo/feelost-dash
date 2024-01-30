@@ -14,7 +14,7 @@ hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
 epi_df = pl.read_csv("./data/input/epi_df.csv")
 
 
-datasets_list = ["hf_list", "epi", "rmh"]
+datasets_list = ["hf_list", "epi"]
 months = [
     "All",
     "January",

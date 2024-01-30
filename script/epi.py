@@ -1,5 +1,7 @@
 import polars as pl
+import numpy as np
 
+from script.outlier_metrics import outlier_iqr
 
 # Health facility list datasets
 hf_list_df = pl.read_csv("./data/clean/hf_list_amhara_region.csv")
@@ -161,3 +163,5 @@ epi_ind = (
 
 epi_ind.write_csv("./data/input/epi_ind.csv")
 breakpoint()
+
+
