@@ -3,28 +3,32 @@ import scipy
 import polars as pl
 
 
-def outlier_iqr(arr: np.ndarray, factor: float) -> float:
+def outlier_iqr(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
     iqr = scipy.stats.iqr(x=arr)
 
-    return arr > factor * iqr
+    return arr > factor * iqr  # , iqr
 
 
-def outlier_sd(arr: np.ndarray, factor: float) -> float:
+def outlier_sd(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
     sd = np.sqrt(scipy.stats.describe(a=arr).variance)
     # breakpoint()
-    return arr > factor * sd
+    return arr > factor * sd  # , sd
 
 
-def outlier_ttt(arr: np.ndarray, q: float) -> float:
-    t_obs = np.abs(arr - np.mean(arr)) / np.sqrt(scipy.stats.describe(a=arr).variance)
-    return t_obs > scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1)
+def outlier_ttt(arr: np.ndarray, q: float) -> float:  # tuple[float, float]:
+    arr_sqrt = np.sqrt(scipy.stats.describe(a=arr).variance)
+    if arr_sqrt > 0:
+        t_obs = np.abs(arr - np.mean(arr)) / arr_sqrt
+        return t_obs > scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1)  # , t_obs
+    else:
+        return np.repeat(True, arr.shape[0])
 
 
-def outliers_df(df: pl.DataFrame, indicators: list, factor: dict) -> tuple:
+def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type: str = "count") -> tuple:
     cols = indicators.copy()
     cols.append("hf_id")
     # regions = epi_ind.select("region").unique().to_series().sort().to_list()
-    df2 = df.select(cols)
+    df2 = df.filter(pl.col("type") == indicator_type).select(cols)
     hf_list = df2.select("hf_id").unique().to_series()
     nb_cols = len(df2.columns) - 1
     hf_ids = np.repeat(hf_list, repeats=nb_cols)
@@ -34,17 +38,25 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict) -> tuple:
     arr_iqr = np.array([])
     arr_sd = np.array([])
     arr_ttt = np.array([])
+
     for hf in hf_list:
         df_hf = df2.filter(pl.col("hf_id") == hf).drop("hf_id")
         ind_names = np.append(ind_names, cols)
         for col in df_hf.columns:
+            arr = df_hf[col].to_numpy()
+            arr2 = arr[~np.isnan(arr)]
+            if len(arr2) < 13:
+                arr_iqr = np.append(arr_iqr, np.nan)
+                arr_sd = np.append(arr_sd, np.nan)
+                arr_ttt = np.append(arr_ttt, np.nan)
+                continue
             # breakpoint()
-            arr_iqr = np.append(arr_iqr, outlier_iqr(df_hf[col].to_numpy(), factor=factor["iqr"]).sum())
-            arr_sd = np.append(arr_sd, outlier_sd(df_hf[col].to_numpy(), factor=factor["sd"]).sum())
+            arr_iqr = np.append(arr_iqr, outlier_iqr(arr2, factor=factor["iqr"]).sum())
+            arr_sd = np.append(arr_sd, outlier_sd(arr2, factor=factor["sd"]).sum())
             arr_ttt = np.append(
                 arr_ttt,
                 outlier_ttt(
-                    df_hf[col].to_numpy(),
+                    arr2,
                     q=factor["ttt"],
                 ).sum(),
             )
