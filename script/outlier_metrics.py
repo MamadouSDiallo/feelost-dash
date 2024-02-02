@@ -40,10 +40,12 @@ def outlier_ttt(arr: np.ndarray, q: float) -> float:  # tuple[float, float]:
 def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type: str = "count") -> tuple:
     cols = indicators.copy()
     nb_cols = len(cols)
-    df2 = df.filter(pl.col("type") == indicator_type).sort(by="hf_id").select(cols + ["hf_id", "hf_name"])
+    df2 = df.filter(pl.col("type") == indicator_type).sort(by="hf_id")  # .select(cols + ["hf_id", "hf_name"])
     hf_ids = df2.select(["hf_id"]).unique().to_series()
     for i, hf in enumerate(hf_ids):
         df_hf = df2.filter(pl.col("hf_id") == hf)
+        years = np.array([])
+        months = np.array([])
         arr_iqr = np.array([])
         arr_sd = np.array([])
         arr_ttt = np.array([])
@@ -54,6 +56,8 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                 arr_iqr = np.append(arr_iqr, np.repeat(np.nan, arr.shape[0]))
                 arr_sd = np.append(arr_sd, np.repeat(np.nan, arr.shape[0]))
                 arr_ttt = np.append(arr_ttt, np.repeat(np.nan, arr.shape[0]))
+                years = np.append(years, df_hf["year"].to_numpy())
+                months = np.append(months, df_hf["month"].to_numpy())
                 continue
             arr_iqr = np.append(arr_iqr, outlier_iqr(arr, factor=factor["iqr"]))
             arr_sd = np.append(arr_sd, outlier_zscores(arr, factor=factor["sd"]))
@@ -64,6 +68,8 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                     q=factor["ttt"],
                 ),
             )
+            years = np.append(years, df_hf["year"].to_numpy())
+            months = np.append(months, df_hf["month"].to_numpy())
 
         if i == 0:
             df_hfs = pl.DataFrame(
@@ -71,6 +77,8 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                     "hf_id": np.repeat(df_hf["hf_id"], nb_cols),
                     "hf_name": np.repeat(df_hf["hf_name"], nb_cols),
                     "indicator": np.repeat(cols, df_hf.shape[0]),
+                    "years": years,
+                    "months": months,
                     "iqr": arr_iqr,
                     "sd": arr_sd,
                     "ttt": arr_ttt,
@@ -83,6 +91,8 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                         "hf_id": np.repeat(df_hf["hf_id"], nb_cols),
                         "hf_name": np.repeat(df_hf["hf_name"], nb_cols),
                         "indicator": np.repeat(cols, df_hf.shape[0]),
+                        "years": years,
+                        "months": months,
                         "iqr": arr_iqr,
                         "sd": arr_sd,
                         "ttt": arr_ttt,
@@ -94,10 +104,14 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
 
 
 def outliers_aggr(df):
-    return df.group_by(by=["hf_id", "hf_name", "indicator"]).agg(
-        pl.col("iqr").filter(pl.col("iqr").is_not_nan()).sum().alias("iqr"),
-        pl.col("sd").filter(pl.col("sd").is_not_nan()).sum().alias("sd"),
-        pl.col("ttt").filter(pl.col("ttt").is_not_nan()).sum().alias("ttt"),
+    return (
+        df.group_by(by=["hf_id", "hf_name", "indicator"])
+        .agg(
+            pl.col("iqr").filter(pl.col("iqr").is_not_nan()).sum().alias("iqr"),
+            pl.col("sd").filter(pl.col("sd").is_not_nan()).sum().alias("sd"),
+            pl.col("ttt").filter(pl.col("ttt").is_not_nan()).sum().alias("ttt"),
+        )
+        .filter((pl.col("iqr") > 0) | (pl.col("sd") > 0) | (pl.col("ttt") > 0))
     )
 
 
