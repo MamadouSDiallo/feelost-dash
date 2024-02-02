@@ -64,7 +64,7 @@ layout = html.Div(
                                         dcc.Dropdown(
                                             id="starting-month",
                                             options=months,
-                                            value="January",
+                                            value="November",
                                         ),
                                     ],
                                     width=7,
@@ -82,7 +82,7 @@ layout = html.Div(
                                         dcc.Dropdown(
                                             id="ending-year",
                                             options=years,
-                                            value=2013,
+                                            value=2015,
                                         ),
                                     ],
                                     width=5,
@@ -93,7 +93,7 @@ layout = html.Div(
                                         dcc.Dropdown(
                                             id="ending-month",
                                             options=months,
-                                            value="January",
+                                            value="October",
                                         ),
                                     ],
                                     width=7,
@@ -220,7 +220,7 @@ layout = html.Div(
                                     column_selectable="multi",
                                     page_action="native",
                                     page_current=0,
-                                    # page_size=20,
+                                    page_size=15,
                                     style_table={
                                         "overflowX": "auto",
                                         "maxWidth": "100%",
@@ -279,22 +279,24 @@ def compute_outliers(dataset, start_year, start_month, end_year, end_month, iqr_
 
     match dataset:
         case "epi":
-            outliers_df = epi_outliers(begin, end, factor)
+            outliers_agg = epi_outliers_agg(begin, end, factor)
         case _:
             raise ValueError("Selected dataset not found!")
 
-    return outliers_df.to_dicts(), [
-        {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True} for i in outliers_df.columns
+    return outliers_agg.to_dicts(), [
+        {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
+        for i in outliers_agg.columns
+        if i != "hf_id"
     ]
 
 
-def epi_outliers(begin, end, factor):
+def epi_outliers_agg(begin, end, factor):
     # epi_inds = ["bcg", "ipv", "penta1", "penta3", "mcv1", "rota2", "full_vacc"]
     # epi_inds.append("hf_id")
     # regions = epi_ind.select("region").unique().to_series().sort().to_list()
     # hf_list = epi_df.select("hf_id").unique().to_series()
 
     # epi_df = pl.read_csv("./data/input/epi_ind.csv").select(epi_inds)
-    epi_outliers_df = pl.read_csv("./data/input/epi_outliers.csv")
+    epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
 
-    return epi_outliers_df
+    return epi_outliers_agg

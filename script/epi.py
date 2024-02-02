@@ -1,6 +1,6 @@
 import polars as pl
 
-from outlier_metrics import outliers_df
+from outlier_metrics import outliers_df, outliers_aggr
 
 # Health facility list datasets
 hf_list_df = pl.read_csv("./data/clean/hf_list_amhara_region.csv")
@@ -164,6 +164,9 @@ epi_ind.write_csv("./data/input/epi_ind.csv")
 
 indicators = ["bcg", "ipv", "penta1", "penta3", "mcv1", "rota2", "full_vacc"]
 factors = {"iqr": 3, "sd": 3, "ttt": 0.995}
-epi_outliers = outliers_df(df=epi_ind, indicators=indicators, factor=factors)
+epi_outliers_df = outliers_df(df=epi_ind, indicators=indicators, factor=factors)
+epi_outliers_agg = outliers_aggr(epi_outliers_df)
+
 # breakpoint()
-epi_outliers.write_csv("./data/input/epi_outliers.csv")
+epi_outliers_df.write_csv("./data/input/epi_outliers_df.csv")
+epi_outliers_agg.write_csv("./data/input/epi_outliers_agg.csv")
