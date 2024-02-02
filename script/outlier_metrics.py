@@ -28,9 +28,8 @@ def outlier_ttt(arr: np.ndarray, q: float) -> float:  # tuple[float, float]:
     arr_std = np.std(arr)
     if arr_std > 0:
         t_obs = np.abs(arr - np.mean(arr)) / arr_std
-        tau = scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1) / np.sqrt(
-            arr.shape[0] * (arr.shape[0] - 2 + scipy.stats.t.ppf(q=q, df=2) ** 2)
-        )
+        t_alpha = scipy.stats.t.ppf(q=q, df=arr.shape[0] - 2)
+        tau = t_alpha * (arr.shape[0] - 1) / np.sqrt(arr.shape[0] * (arr.shape[0] - 2 + t_alpha**2))
         return t_obs > tau  # , t_obs
     else:
         return np.repeat(False, arr.shape[0])
