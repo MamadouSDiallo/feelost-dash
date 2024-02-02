@@ -14,11 +14,11 @@ def outlier_iqr(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]
         return np.repeat(False, arr.shape[0])
 
 
-def outlier_sd(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
+def outlier_zscores(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
     mean = np.mean(arr)
     sd = np.std(arr)
     if sd > 0:
-        return (arr > np.ceil(mean + factor * sd)) | (arr < np.floor(mean - factor * sd))  # , sd
+        return np.abs(arr - mean) / sd > factor  # , sd
     else:
         return np.repeat(False, arr.shape[0])
 
@@ -37,22 +37,24 @@ def outlier_ttt(arr: np.ndarray, q: float) -> float:  # tuple[float, float]:
 def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type: str = "count") -> tuple:
     cols = indicators.copy()
     cols.append("hf_id")
-    # regions = epi_ind.select("region").unique().to_series().sort().to_list()
+    cols.append("hf_name")
     df2 = df.filter(pl.col("type") == indicator_type).select(cols)
-    hf_list = df2.select("hf_id").unique().to_series()
-    nb_cols = len(df2.columns) - 1
-    hf_ids = np.repeat(hf_list, repeats=nb_cols)
+    hf_list = df2.select(["hf_id", "hf_name"]).unique(subset=["hf_id"])
+    nb_cols = len(df2.columns) - 2
+    hf_ids = np.repeat(hf_list.select("hf_id").to_series(), repeats=nb_cols)
+    hf_names = np.repeat(hf_list.select("hf_name").to_series(), repeats=nb_cols)
     ind_names = np.array([])
     cols.remove("hf_id")
+    cols.remove("hf_name")
 
     arr_iqr = np.array([])
     arr_sd = np.array([])
     arr_ttt = np.array([])
 
-    for hf in hf_list:
+    for hf in hf_list.select("hf_id").to_series():
         df_hf = df2.filter(pl.col("hf_id") == hf).drop("hf_id")
         ind_names = np.append(ind_names, cols)
-        for col in df_hf.columns:
+        for col in cols:
             arr = df_hf[col].to_numpy()
             arr2 = arr[~np.isnan(arr)]
             if len(arr2) < 13:
@@ -62,7 +64,7 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                 continue
             # breakpoint()
             arr_iqr = np.append(arr_iqr, outlier_iqr(arr2, factor=factor["iqr"]).sum())
-            arr_sd = np.append(arr_sd, outlier_sd(arr2, factor=factor["sd"]).sum())
+            arr_sd = np.append(arr_sd, outlier_zscores(arr2, factor=factor["sd"]).sum())
             arr_ttt = np.append(
                 arr_ttt,
                 outlier_ttt(
@@ -72,7 +74,16 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
             )
 
     df_hfs = (
-        pl.DataFrame({"hf_id": hf_ids, "indicator": ind_names, "iqr": arr_iqr, "sd": arr_sd, "ttt": arr_ttt})
+        pl.DataFrame(
+            {
+                "hf_id": hf_ids,
+                "hf_name": hf_names,
+                "indicator": ind_names,
+                "iqr": arr_iqr,
+                "sd": arr_sd,
+                "ttt": arr_ttt,
+            }
+        )
         .filter(pl.col("iqr").is_not_nan() & pl.col("sd").is_not_nan() | pl.col("ttt").is_not_nan())
         .filter((pl.col("iqr") > 0) | (pl.col("sd") > 0) | (pl.col("ttt") > 0))
     )
@@ -90,8 +101,8 @@ def test_outlier_iqr():
     assert (outliers == (False, False, True, False, True, False, False, False, False, False, False, True)).all()
 
 
-def test_outlier_sd():
-    outliers = outlier_sd(arr=x, factor=2)
+def test_outlier_zscores():
+    outliers = outlier_zscores(arr=x, factor=2)
     assert (outliers == (False, False, False, False, True, False, False, False, False, False, False, False)).all()
 
 

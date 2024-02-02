@@ -164,7 +164,7 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         html.Label("Interquartile Range (IQR)"),
-                                        html.Div(dcc.Input(id="iqr-mult", type="number", value=1.5)),
+                                        html.Div(dcc.Input(id="iqr-mult", type="number", value=3)),
                                         # html.Button(
                                         #     "Select",
                                         #     id="btn-iqr",
@@ -176,7 +176,7 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         html.Label("Standard Deviation (SD)"),
-                                        html.Div(dcc.Input(id="sd-mult", type="number", value=2)),
+                                        html.Div(dcc.Input(id="sd-mult", type="number", value=3)),
                                         # html.Button(
                                         #     "Select",
                                         #     id="btn-sd",
@@ -188,7 +188,7 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         html.Label("Thompson Tau Test (TTT)"),
-                                        html.Div(dcc.Input(id="ttt-perc", type="number", min=1, max=100, value=95)),
+                                        html.Div(dcc.Input(id="ttt-perc", type="number", min=1, max=100, value=99)),
                                         # html.Button(
                                         #     "Select",
                                         #     id="btn-ttt",
