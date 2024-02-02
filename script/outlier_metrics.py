@@ -17,7 +17,6 @@ def outlier_iqr(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]
 def outlier_sd(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
     mean = np.mean(arr)
     sd = np.std(arr)
-    # breakpoint()
     if sd > 0:
         return (arr > np.ceil(mean + factor * sd)) | (arr < np.floor(mean - factor * sd))  # , sd
     else:
