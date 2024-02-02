@@ -25,9 +25,9 @@ def outlier_sd(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
 
 
 def outlier_ttt(arr: np.ndarray, q: float) -> float:  # tuple[float, float]:
-    arr_sqrt = np.sqrt(scipy.stats.describe(a=arr).variance)
-    if arr_sqrt > 0:
-        t_obs = np.abs(arr - np.mean(arr)) / arr_sqrt
+    arr_std = np.std(arr)
+    if arr_std > 0:
+        t_obs = np.abs(arr - np.mean(arr)) / arr_std
         tau = scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1) / np.sqrt(
             arr.shape[0] * (arr.shape[0] - 2 + scipy.stats.t.ppf(q=q, df=2) ** 2)
         )
@@ -73,9 +73,11 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                 ).sum(),
             )
 
-    df_hfs = pl.DataFrame(
-        {"hf_id": hf_ids, "indicator": ind_names, "iqr": arr_iqr, "sd": arr_sd, "ttt": arr_ttt}
-    ).filter((pl.col("iqr") > 0) | (pl.col("sd") > 0) | (pl.col("ttt") > 0))
+    df_hfs = (
+        pl.DataFrame({"hf_id": hf_ids, "indicator": ind_names, "iqr": arr_iqr, "sd": arr_sd, "ttt": arr_ttt})
+        .filter(pl.col("iqr").is_not_nan() & pl.col("sd").is_not_nan() | pl.col("ttt").is_not_nan())
+        .filter((pl.col("iqr") > 0) | (pl.col("sd") > 0) | (pl.col("ttt") > 0))
+    )
     return df_hfs
 
 
