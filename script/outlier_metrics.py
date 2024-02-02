@@ -4,24 +4,36 @@ import polars as pl
 
 
 def outlier_iqr(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
-    iqr = scipy.stats.iqr(x=arr)
+    q1 = np.quantile(arr, 0.25)
+    q3 = np.quantile(arr, 0.75)
+    iqr = q3 - q1  # scipy.stats.iqr(x=arr)
 
-    return arr > factor * iqr  # , iqr
+    if iqr > 0:
+        return (arr > q3 + factor * iqr) | (arr < q1 - factor * iqr)  # , iqr
+    else:
+        return np.repeat(False, arr.shape[0])
 
 
 def outlier_sd(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
-    sd = np.sqrt(scipy.stats.describe(a=arr).variance)
+    mean = np.mean(arr)
+    sd = np.std(arr)
     # breakpoint()
-    return arr > factor * sd  # , sd
+    if sd > 0:
+        return (arr > mean + factor * sd) | (arr < mean - factor * sd)  # , sd
+    else:
+        return np.repeat(False, arr.shape[0])
 
 
 def outlier_ttt(arr: np.ndarray, q: float) -> float:  # tuple[float, float]:
     arr_sqrt = np.sqrt(scipy.stats.describe(a=arr).variance)
     if arr_sqrt > 0:
         t_obs = np.abs(arr - np.mean(arr)) / arr_sqrt
-        return t_obs > scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1)  # , t_obs
+        tau = scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1) / np.sqrt(
+            arr.shape[0] * (arr.shape[0] - 2 + scipy.stats.t.ppf(q=q, df=2) ** 2)
+        )
+        return t_obs > tau  # , t_obs
     else:
-        return np.repeat(True, arr.shape[0])
+        return np.repeat(False, arr.shape[0])
 
 
 def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type: str = "count") -> tuple:
@@ -61,7 +73,9 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict, indicator_type
                 ).sum(),
             )
 
-    df_hfs = pl.DataFrame({"hf_id": hf_ids, "indicator": ind_names, "iqr": arr_iqr, "sd": arr_sd, "ttt": arr_ttt})
+    df_hfs = pl.DataFrame(
+        {"hf_id": hf_ids, "indicator": ind_names, "iqr": arr_iqr, "sd": arr_sd, "ttt": arr_ttt}
+    ).filter((pl.col("iqr") > 0) | (pl.col("sd") > 0) | (pl.col("ttt") > 0))
     return df_hfs
 
 
