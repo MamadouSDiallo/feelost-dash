@@ -9,7 +9,7 @@ def outlier_iqr(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]
     iqr = q3 - q1  # scipy.stats.iqr(x=arr)
 
     if iqr > 0:
-        return (arr > q3 + factor * iqr) | (arr < q1 - factor * iqr)  # , iqr
+        return (arr > np.ceil(q3 + factor * iqr)) | (arr < np.floor(q1 - factor * iqr))  # , iqr
     else:
         return np.repeat(False, arr.shape[0])
 
@@ -19,7 +19,7 @@ def outlier_sd(arr: np.ndarray, factor: float) -> float:  # tuple[float, float]:
     sd = np.std(arr)
     # breakpoint()
     if sd > 0:
-        return (arr > mean + factor * sd) | (arr < mean - factor * sd)  # , sd
+        return (arr > np.ceil(mean + factor * sd)) | (arr < np.floor(mean - factor * sd))  # , sd
     else:
         return np.repeat(False, arr.shape[0])
 
