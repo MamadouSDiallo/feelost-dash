@@ -264,7 +264,7 @@ layout = html.Div(
 def compute_outliers(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
     begin = {"month": start_month, "year": start_year}
     end = {"month": end_month, "year": end_year}
-    factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": ttt_perc}
+    factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
 
     # before_months = []
     # month1 = "January"
