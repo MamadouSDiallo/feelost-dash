@@ -3,13 +3,10 @@ from dash import html, dcc, callback, Input, Output, dash_table
 
 import dash_bootstrap_components as dbc
 
-import numpy as np
 import polars as pl
 
 
-from script.outlier_metrics import outlier_iqr
-
-dash.register_page(__name__)
+dash.register_page(__name__, name="FeeLoST")
 
 
 datasets_list = ["epi"]
@@ -214,8 +211,25 @@ layout = html.Div(
                         html.H5("Summary", style={"padding": 10}),
                         dbc.Row(
                             [
-                                dash_table.DataTable(id="outliers-dataset"),
-                            ]
+                                dash_table.DataTable(
+                                    id="outliers-dataset",
+                                    editable=False,
+                                    filter_action="native",
+                                    sort_action="native",
+                                    sort_mode="single",
+                                    column_selectable="multi",
+                                    page_action="native",
+                                    page_current=0,
+                                    # page_size=20,
+                                    style_table={
+                                        "overflowX": "auto",
+                                        "maxWidth": "100%",
+                                        "marginLeft": "auto",
+                                        "marginRight": "auto",
+                                    },
+                                ),
+                            ],
+                            style={"padding": 10},
                         ),
                     ]
                 ),
@@ -237,6 +251,7 @@ layout = html.Div(
 
 @callback(
     Output(component_id="outliers-dataset", component_property="data"),
+    Output(component_id="outliers-dataset", component_property="columns"),
     Input(component_id="datasets-list", component_property="value"),
     Input(component_id="starting-year", component_property="value"),
     Input(component_id="starting-month", component_property="value"),
@@ -268,29 +283,18 @@ def compute_outliers(dataset, start_year, start_month, end_year, end_month, iqr_
         case _:
             raise ValueError("Selected dataset not found!")
 
-    return outliers_df.to_dicts()
+    return outliers_df.to_dicts(), [
+        {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True} for i in outliers_df.columns
+    ]
 
 
 def epi_outliers(begin, end, factor):
-    epi_inds = ["bcg", "ipv", "penta1", "penta3", "mcv1", "rota2", "full_vacc"]
-    epi_inds.append("hf_id")
+    # epi_inds = ["bcg", "ipv", "penta1", "penta3", "mcv1", "rota2", "full_vacc"]
+    # epi_inds.append("hf_id")
     # regions = epi_ind.select("region").unique().to_series().sort().to_list()
-    epi_df = pl.read_csv("./data/input/epi_ind.csv").select(epi_inds)
-    hf_list = epi_df.select("hf_id").unique().to_series()
-    nb_cols = len(epi_df.columns) - 1
-    hf_ids = np.repeat(hf_list, repeats=nb_cols)
-    col_names = np.array([])
+    # hf_list = epi_df.select("hf_id").unique().to_series()
 
-    epi_iqr = np.array([])
-    for hf in hf_list:
-        epi_hf = epi_df.filter(pl.col("hf_id") == hf).drop("hf_id")
-        col_names = np.append(col_names, epi_hf.columns)
-        for col in epi_hf.columns:
-            # breakpoint()
-            epi_iqr = np.append(epi_iqr, outlier_iqr(epi_hf[col].to_numpy(), factor=factor["iqr"]).sum())
-            # outlier_sd(epi_hf[col].to_numpy(), factor=factor["sd"]).sum()
-            # outlier_ttt(epi_hf[col].to_numpy(), factor=factor["ttt"]).sum()
+    # epi_df = pl.read_csv("./data/input/epi_ind.csv").select(epi_inds)
+    epi_outliers_df = pl.read_csv("./data/input/epi_outliers.csv")
 
-    breakpoint()
-    epi_hfs = pl.DataFrame({"hf_id": hf_ids, "iqr": epi_iqr})
-    return epi_hfs
+    return epi_outliers_df

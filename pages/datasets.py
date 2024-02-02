@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 
 import polars as pl
 
-dash.register_page(__name__)
+dash.register_page(__name__, name="FeeLoST")
 
 
 hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
@@ -30,7 +30,7 @@ months = [
     "November",
     "December",
 ]
-quarters = ["Q1", "Q2", "Q3", "Q4"]
+quarters = ["All", "Q1", "Q2", "Q3", "Q4"]
 
 layout = html.Div(
     id="datasets",

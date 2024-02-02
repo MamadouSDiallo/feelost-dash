@@ -15,7 +15,7 @@ def outlier_sd(arr: np.ndarray, factor: float) -> float:
     return arr > factor * sd
 
 
-def outlier_ttt(arr: np.ndarray, factor: float, q: float) -> float:
+def outlier_ttt(arr: np.ndarray, q: float) -> float:
     t_obs = np.abs(arr - np.mean(arr)) / np.sqrt(scipy.stats.describe(a=arr).variance)
     return t_obs > scipy.stats.t.ppf(q=q, df=arr.shape[0] - 1)
 
@@ -24,27 +24,31 @@ def outliers_df(df: pl.DataFrame, indicators: list, factor: dict) -> tuple:
     cols = indicators.copy()
     cols.append("hf_id")
     # regions = epi_ind.select("region").unique().to_series().sort().to_list()
-
-    hf_list = df.select("hf_id").unique().to_series()
-    nb_cols = len(df.columns) - 1
+    df2 = df.select(cols)
+    hf_list = df2.select("hf_id").unique().to_series()
+    nb_cols = len(df2.columns) - 1
     hf_ids = np.repeat(hf_list, repeats=nb_cols)
     ind_names = np.array([])
+    cols.remove("hf_id")
 
     arr_iqr = np.array([])
     arr_sd = np.array([])
     arr_ttt = np.array([])
     for hf in hf_list:
-        df_hf = df.filter(pl.col("hf_id") == hf).drop("hf_id")
-        ind_names = np.append(ind_names, df.columns)
+        df_hf = df2.filter(pl.col("hf_id") == hf).drop("hf_id")
+        ind_names = np.append(ind_names, cols)
         for col in df_hf.columns:
             # breakpoint()
             arr_iqr = np.append(arr_iqr, outlier_iqr(df_hf[col].to_numpy(), factor=factor["iqr"]).sum())
             arr_sd = np.append(arr_sd, outlier_sd(df_hf[col].to_numpy(), factor=factor["sd"]).sum())
-            arr_ttt = np.append(arr_ttt, outlier_ttt(df_hf[col].to_numpy(), factor=factor["ttt"]).sum())
-            # outlier_sd(epi_hf[col].to_numpy(), factor=factor["sd"]).sum()
-            # outlier_ttt(epi_hf[col].to_numpy(), factor=factor["ttt"]).sum()
+            arr_ttt = np.append(
+                arr_ttt,
+                outlier_ttt(
+                    df_hf[col].to_numpy(),
+                    q=factor["ttt"],
+                ).sum(),
+            )
 
-    breakpoint()
     df_hfs = pl.DataFrame({"hf_id": hf_ids, "indicator": ind_names, "iqr": arr_iqr, "sd": arr_sd, "ttt": arr_ttt})
     return df_hfs
 
