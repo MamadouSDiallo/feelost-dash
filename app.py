@@ -1,5 +1,5 @@
 # Import packages
-
+import os
 import dash
 from dash import Dash, html, dcc
 import dash_auth
@@ -45,7 +45,9 @@ app.layout = html.Div(
     # className="all",
 )
 
+app.config["VALID_USERNAME_PASSWORD_PAIRS"] = os.environ.get("VALID_USERNAME_PASSWORD_PAIRS")
 
 # Run the app
 if __name__ == "__main__":
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
