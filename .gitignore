@@ -161,6 +161,6 @@ cython_debug/
 
 # Other
 script/
-data/clean
-data/gis
-data/raw
+data/clean/
+data/gis/
+data/raw/
