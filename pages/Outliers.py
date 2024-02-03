@@ -8,6 +8,8 @@ import polars as pl
 
 dash.register_page(__name__, name="FeeLoST")
 
+hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
+
 
 datasets_list = ["epi"]
 years = [2013, 2014, 2015]
@@ -27,6 +29,13 @@ months = [
     "December",
 ]
 quarters = ["All", "Q1", "Q2", "Q3", "Q4"]
+
+regions = hf_list_df["region"].unique().to_list()
+zones = hf_list_df["zone"].unique().to_list()
+woredas = hf_list_df["woreda"].unique().to_list()
+levels = hf_list_df["level"].unique().to_list()
+hf_types = hf_list_df["hf_type"].unique().to_list()
+ownership = hf_list_df["ownership"].unique().to_list()
 
 # Frontend
 layout = html.Div(
@@ -212,7 +221,7 @@ layout = html.Div(
                         dbc.Row(
                             [
                                 dash_table.DataTable(
-                                    id="outliers-dataset",
+                                    id="outliers-agg",
                                     editable=False,
                                     filter_action="native",
                                     sort_action="native",
@@ -235,7 +244,81 @@ layout = html.Div(
                 ),
                 html.Br(),
                 dbc.Card(
-                    html.H5("Health Facilities with Outliers", style={"padding": 10}),
+                    [
+                        html.H5("Health Facilities with Outliers", style={"padding": 10}),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label("Region"),
+                                        html.Div(
+                                            dcc.Dropdown(id="outliers-region", options=regions, value=regions[0])
+                                        ),
+                                    ]
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label("Zone"),
+                                        html.Div(dcc.Dropdown(id="outliers-zone", options=zones, value="")),
+                                    ]
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label("Woreda"),
+                                        html.Div(dcc.Dropdown(id="outliers-woreda", options=woredas, value="")),
+                                    ]
+                                ),
+                            ],
+                            style={"padding": 10},
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label("Level"),
+                                        html.Div(
+                                            dcc.Dropdown(id="outliers-levels", options=levels, value="")
+                                        ),
+                                    ]
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label("Type"),
+                                        html.Div(dcc.Dropdown(id="outliers-types", options=hf_types, value="")),
+                                    ]
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label("Ownership"),
+                                        html.Div(dcc.Dropdown(id="outliers-ownership", options=ownership, value="")),
+                                    ]
+                                ),
+                            ],
+                            style={"padding": 10},
+                        ),
+                        dbc.Row(
+                            [
+                                dash_table.DataTable(
+                                    id="outliers-df",
+                                    editable=False,
+                                    filter_action="native",
+                                    sort_action="native",
+                                    sort_mode="single",
+                                    column_selectable="multi",
+                                    page_action="native",
+                                    page_current=0,
+                                    page_size=15,
+                                    style_table={
+                                        "overflowX": "auto",
+                                        "maxWidth": "100%",
+                                        "marginLeft": "auto",
+                                        "marginRight": "auto",
+                                    },
+                                ),
+                            ],
+                            style={"padding": 10},
+                        ),
+                    ]
                 ),
             ],
             style={"padding": 10, "flex": 3},
@@ -250,8 +333,8 @@ layout = html.Div(
 
 
 @callback(
-    Output(component_id="outliers-dataset", component_property="data"),
-    Output(component_id="outliers-dataset", component_property="columns"),
+    Output(component_id="outliers-agg", component_property="data"),
+    Output(component_id="outliers-agg", component_property="columns"),
     Input(component_id="datasets-list", component_property="value"),
     Input(component_id="starting-year", component_property="value"),
     Input(component_id="starting-month", component_property="value"),
@@ -261,7 +344,7 @@ layout = html.Div(
     Input(component_id="sd-mult", component_property="value"),
     Input(component_id="ttt-perc", component_property="value"),
 )
-def compute_outliers(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
+def compute_outliers_agg(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
     begin = {"month": start_month, "year": start_year}
     end = {"month": end_month, "year": end_year}
     factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
@@ -290,13 +373,43 @@ def compute_outliers(dataset, start_year, start_month, end_year, end_month, iqr_
     ]
 
 
-def epi_outliers_agg(begin, end, factor):
-    # epi_inds = ["bcg", "ipv", "penta1", "penta3", "mcv1", "rota2", "full_vacc"]
-    # epi_inds.append("hf_id")
-    # regions = epi_ind.select("region").unique().to_series().sort().to_list()
-    # hf_list = epi_df.select("hf_id").unique().to_series()
+@callback(
+    Output(component_id="outliers-df", component_property="data"),
+    Output(component_id="outliers-df", component_property="columns"),
+    Input(component_id="datasets-list", component_property="value"),
+    Input(component_id="starting-year", component_property="value"),
+    Input(component_id="starting-month", component_property="value"),
+    Input(component_id="ending-year", component_property="value"),
+    Input(component_id="ending-month", component_property="value"),
+    Input(component_id="iqr-mult", component_property="value"),
+    Input(component_id="sd-mult", component_property="value"),
+    Input(component_id="ttt-perc", component_property="value"),
+)
+def compute_outliers_df(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
+    begin = {"month": start_month, "year": start_year}
+    end = {"month": end_month, "year": end_year}
+    factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
 
-    # epi_df = pl.read_csv("./data/input/epi_ind.csv").select(epi_inds)
+    match dataset:
+        case "epi":
+            outliers_df = epi_outliers_df(begin, end, factor)
+        case _:
+            raise ValueError("Selected dataset not found!")
+
+    return outliers_df.to_dicts(), [
+        {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
+        for i in outliers_df.columns
+        if i != "hf_id"
+    ]
+
+
+def epi_outliers_agg(begin, end, factor):
     epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
 
     return epi_outliers_agg
+
+
+def epi_outliers_df(begin, end, factor):
+    epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv")
+
+    return epi_outliers_df
