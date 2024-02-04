@@ -21,7 +21,7 @@ app.title = "FeeLoST"
 nav_menu = dbc.Nav(
     id="nav-bar",
     children=[
-        dbc.NavLink(children="About FeeLoST", href="/about"),
+        dbc.NavLink(children="About FeeLoST", href="/"),
         dbc.NavLink(children="Datasets", href="/datasets"),
         dbc.NavLink(children="Outliers", href="/outliers"),
         dbc.NavLink(children="Inconsistencies", href="/inconsistencies", disabled=True),
