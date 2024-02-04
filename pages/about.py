@@ -3,7 +3,7 @@ from dash import html
 
 import dash_bootstrap_components as dbc
 
-dash.register_page(__name__, name="about")
+dash.register_page(__name__, name="FeeLoST")
 
 
 layout = html.Div(
@@ -48,17 +48,17 @@ layout = html.Div(
                             [
                                 html.Li(
                                     html.A(
-                                        "The data managers at the hospitals, health centres, health posts, private clinics, other health facilities (role => data recorders). The data managers record the information in DHIS2 on a regular basis. On the FeeLoST platform, the main role of the data recorders is to address identified or possible data quality issues flagged on the platform."
+                                        "The data managers at the hospitals, health centres, health posts, private clinics, other health facilities. The data managers record the information in DHIS2 on a regular basis. On the FeeLoST platform, the main role of the data recorders is to address identified or possible data quality issues flagged on the platform."
                                     )
                                 ),
                                 html.Li(
                                     html.A(
-                                        "The health officials at different administrative levels, i.e. national, regional, zones, and districts (role => data reviewers). The data reviewers examine the data on a regular basis, tracking and monitoring quality metrics. They can provide feedback to the data recorders based on their review of the data."
+                                        "The health officials at different administrative levels, i.e. national, regional, zones, and districts. The data reviewers examine the data on a regular basis, tracking and monitoring quality metrics. They can provide feedback to the data recorders based on their review of the data."
                                     )
                                 ),
                                 html.Li(
                                     html.A(
-                                        "The system administrators (role => administrator) regional level IT personnel. They manage the platform, create and support users."
+                                        "The system administrators regional level IT personnel. They manage the platform, create and support users."
                                     )
                                 ),
                             ]
