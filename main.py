@@ -26,7 +26,7 @@ nav_menu = dbc.Nav(
         dbc.NavLink(children="Outliers", href="/outliers"),
         dbc.NavLink(children="Inconsistencies", href="/inconsistencies", disabled=True),
         dbc.NavLink(children="Missingness", href="/missingness", disabled=True),
-        dbc.NavLink(children="Feedback", href="/feedback"),
+        dbc.NavLink(children="Feedback", href="/feedback", disabled=True),
     ],
 )
 
