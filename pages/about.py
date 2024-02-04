@@ -64,7 +64,41 @@ layout = html.Div(
                             ]
                         ),
                         html.H3("FeeLoST Data Quality Metrics"),
-                        html.P("The FeeLoST is intended to be used by"),
+                        html.P(
+                            "The FeeLoST data quality metrics are used to automatically flag potential quality issues. There are three categories of data quality metrics: outlier, inconsistency, and missingness"
+                        ),
+                        html.H5("Outliers"),
+                        html.P(
+                            "Data outliers refer to individual observations or data points that significantly differ from the majority of the dataset. These anomalies can take the form of unusually high or low values and have the potential to distort statistical analyses and interpretations. Identifying and understanding outliers is critical to assessment of the quality of the health data. We calculate the outliers using three methods."
+                        ),
+                        html.Ul(
+                            [
+                                html.Li(
+                                    [
+                                        html.A(html.B("Metrod 1: using the Interquartile Range (IQR)")),
+                                        dcc.Markdown(
+                                            """
+                                            The IQR is a measure of statistical dispersion defined as $IQR=Q3-Q1$, where $Q3$ is the third quartile and $Q1$ is the first quartile.
+                                            - Data points that fall below $Q1 - 1.5 * IQR$ or above $Q3 + 1.5 * IQR$ are often considered **outliers**.
+                                            - Data points that fall below $Q1 - 3 * IQR$ or above $Q3 + 3 * IQR$ are often considered **extreme** values.""",
+                                            mathjax=True,
+                                        ),
+                                    ]
+                                ),
+                                html.Br(),
+                                html.Li(
+                                    [
+                                        html.A(html.B("Metrod 2: using the z-scores")),
+                                    ]
+                                ),
+                                html.Br(),
+                                html.Li(
+                                    [
+                                        html.A(html.B("Metrod 3: using the Thompson Tau Test (TTT)")),
+                                    ]
+                                ),
+                            ]
+                        ),
                         html.H3("Contact Us"),
                     ],
                     style={"padding": 25, "width": "95"},
