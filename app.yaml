@@ -1,3 +1,12 @@
 runtime: python312
 
-entrypoint: gunicorn -b :$PORT main:app
+entrypoint: gunicorn -b :$PORT main:server
+
+basic_scaling:
+    max_instances: 2
+    idle_timeout: 10m
+
+resources:
+    cpu: 1
+    memory_gb: 1
+    disk_size_gb: 10

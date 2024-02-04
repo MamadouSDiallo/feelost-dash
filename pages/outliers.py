@@ -276,9 +276,7 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         html.Label("Level"),
-                                        html.Div(
-                                            dcc.Dropdown(id="outliers-levels", options=levels, value="")
-                                        ),
+                                        html.Div(dcc.Dropdown(id="outliers-levels", options=levels, value="")),
                                     ]
                                 ),
                                 dbc.Col(
@@ -325,7 +323,7 @@ layout = html.Div(
         ),
     ],
     style={"display": "flex", "flexDirection": "row", "gap": "5px", "width": "100%"},
-    className="all",
+    # className="all",
 )
 
 

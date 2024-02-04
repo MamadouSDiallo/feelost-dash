@@ -86,7 +86,7 @@ layout = html.Div(
         ),
     ],
     style={"display": "flex", "flexDirection": "row", "gap": "5px", "width": "100%"},
-    className="all",
+    # className="all",
 )
 
 
