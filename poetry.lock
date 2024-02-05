@@ -287,6 +287,20 @@ diskcache = ["diskcache (>=5.2.1)", "multiprocess (>=0.70.12)", "psutil (>=5.8.0
 testing = ["beautifulsoup4 (>=4.8.2)", "cryptography (<3.4)", "dash-testing-stub (>=0.0.2)", "lxml (>=4.6.2)", "multiprocess (>=0.70.12)", "percy (>=2.0.2)", "psutil (>=5.8.0)", "pytest (>=6.0.2)", "requests[security] (>=2.21.0)", "selenium (>=3.141.0,<=4.2.0)", "waitress (>=1.4.4)"]
 
 [[package]]
+name = "dash-ag-grid"
+version = "31.0.0"
+description = "Dash wrapper around AG Grid, the best interactive data grid for the web."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "dash_ag_grid-31.0.0-py3-none-any.whl", hash = "sha256:52511da8eaa9a83dd1dae3a22a6b25fd7954f2dbd7db09de6d8b087e32e652a2"},
+    {file = "dash_ag_grid-31.0.0.tar.gz", hash = "sha256:d1fa65292ef9d7e508c96556cb1228a4213f116e19dd61f9b0e4b5312290b662"},
+]
+
+[package.dependencies]
+dash = ">=2"
+
+[[package]]
 name = "dash-auth"
 version = "2.1.0"
 description = "Dash Authorization Package."
@@ -347,17 +361,6 @@ Flask = ">=1.0.4,<2.3.0"
 PyJWT = "*"
 requests = {version = "*", extras = ["security"]}
 Werkzeug = "<2.3.0"
-
-[[package]]
-name = "dash-enterprise-libraries"
-version = "0.0.1"
-description = "A Public stub for dash-enterprise-libraries by Plotly"
-optional = false
-python-versions = "*"
-files = [
-    {file = "dash-enterprise-libraries-0.0.1.tar.gz", hash = "sha256:1d8f995e1a06b3795f16bdf941c791c5c835b24096687dfad7f46d410499eef1"},
-    {file = "dash_enterprise_libraries-0.0.1-py2.py3-none-any.whl", hash = "sha256:aea4bd6c26f7fefc389a50509d047087bd6a3ee977106ed4c6501aecad15fa63"},
-]
 
 [[package]]
 name = "dash-html-components"
@@ -1106,4 +1109,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "9b0d311cda630734fcee1ecfb9f3cb5e9b38336ab1833899dbbe463a35598c29"
+content-hash = "f2d17e771ceb6243930c7959ca4e98d53b1c780c65dac0b1a819cdc542682bbf"

@@ -1,6 +1,8 @@
 import dash
 from dash import html, dcc, callback, Input, Output, dash_table
 
+import dash_ag_grid as dag
+
 import dash_bootstrap_components as dbc
 
 import polars as pl
@@ -13,7 +15,9 @@ pio.templates.default = "seaborn"
 dash.register_page(__name__, name="FeeLoST")
 
 hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
-epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv")
+
+epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv").join(hf_list_df, on=["hf_id", "hf_name"])
+
 epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
 epi_outliers_region_df = pl.read_csv("./data/input/epi_outliers_region_df.csv")
 epi_outliers_region_agg = pl.read_csv("./data/input/epi_outliers_region_agg.csv")
@@ -46,6 +50,12 @@ woredas = hf_list_df["woreda"].unique().to_list()
 levels = hf_list_df["level"].unique().to_list()
 hf_types = hf_list_df["hf_type"].unique().to_list()
 ownership = hf_list_df["ownership"].unique().to_list()
+
+initial_vals = (
+    epi_outliers_df.select(["region", "zone", "woreda", "level", "hf_type", "ownership"])
+    .with_row_index(name="id")
+    .filter(pl.col("id") == 0)
+)
 
 indicators = epi_outliers_df["indicator"].unique().to_list()
 
@@ -316,20 +326,36 @@ layout = html.Div(
                                     [
                                         html.Label("Region"),
                                         html.Div(
-                                            dcc.Dropdown(id="outliers-region", options=regions, value=regions[0])
+                                            dcc.Dropdown(
+                                                id="outliers-region",
+                                                options=regions,
+                                                value=initial_vals["region"].item(),
+                                            )
                                         ),
                                     ]
                                 ),
                                 dbc.Col(
                                     [
                                         html.Label("Zone"),
-                                        html.Div(dcc.Dropdown(id="outliers-zone", options=zones, value="")),
+                                        html.Div(
+                                            dcc.Dropdown(
+                                                id="outliers-zone",
+                                                options=zones,
+                                                value=initial_vals["zone"].item(),
+                                            )
+                                        ),
                                     ]
                                 ),
                                 dbc.Col(
                                     [
                                         html.Label("Woreda"),
-                                        html.Div(dcc.Dropdown(id="outliers-woreda", options=woredas, value="")),
+                                        html.Div(
+                                            dcc.Dropdown(
+                                                id="outliers-woreda",
+                                                options=woredas,
+                                                value=initial_vals["woreda"].item(),
+                                            )
+                                        ),
                                     ]
                                 ),
                             ],
@@ -340,13 +366,13 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         html.Label("Level"),
-                                        html.Div(dcc.Dropdown(id="outliers-levels", options=levels, value="")),
+                                        html.Div(dcc.Dropdown(id="outliers-level", options=levels, value="")),
                                     ]
                                 ),
                                 dbc.Col(
                                     [
                                         html.Label("Type"),
-                                        html.Div(dcc.Dropdown(id="outliers-types", options=hf_types, value="")),
+                                        html.Div(dcc.Dropdown(id="outliers-type", options=hf_types, value="")),
                                     ]
                                 ),
                                 dbc.Col(
@@ -360,22 +386,8 @@ layout = html.Div(
                         ),
                         dbc.Row(
                             [
-                                dash_table.DataTable(
+                                dag.AgGrid(
                                     id="outliers-df",
-                                    editable=False,
-                                    filter_action="native",
-                                    sort_action="native",
-                                    sort_mode="single",
-                                    column_selectable="multi",
-                                    page_action="native",
-                                    page_current=0,
-                                    page_size=15,
-                                    style_table={
-                                        "overflowX": "auto",
-                                        "maxWidth": "100%",
-                                        "marginLeft": "auto",
-                                        "marginRight": "auto",
-                                    },
                                 ),
                             ],
                             style={"padding": 10},
@@ -441,39 +453,32 @@ layout = html.Div(
 
 
 @callback(
-    Output(component_id="outliers-df", component_property="data"),
-    Output(component_id="outliers-df", component_property="columns"),
+    Output(component_id="outliers-df", component_property="rowData"),
+    Output(component_id="outliers-df", component_property="columnDefs"),
     Input(component_id="datasets-list", component_property="value"),
-    Input(component_id="starting-year", component_property="value"),
-    Input(component_id="starting-month", component_property="value"),
-    Input(component_id="ending-year", component_property="value"),
-    Input(component_id="ending-month", component_property="value"),
-    Input(component_id="iqr-mult", component_property="value"),
-    Input(component_id="sd-mult", component_property="value"),
-    Input(component_id="ttt-perc", component_property="value"),
+    Input(component_id="outliers-region", component_property="value"),
+    Input(component_id="outliers-zone", component_property="value"),
+    Input(component_id="outliers-woreda", component_property="value"),
+    Input(component_id="outliers-level", component_property="value"),
+    Input(component_id="outliers-type", component_property="value"),
+    Input(component_id="outliers-ownership", component_property="value"),
 )
-def compute_outliers_df(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
-    begin = {"month": start_month, "year": start_year}
-    end = {"month": end_month, "year": end_year}
-    factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
+def compute_outliers_df(dataset, region, zone, woreda, level, type, ownership):
 
     match dataset:
         case "EPI":
-            outliers_df = epi_outliers_df(begin, end, factor)
+            df = epi_outliers_df.select(
+                ["region", "zone", "woreda", "level", "hf_type", "ownership", "indicator", "iqr", "zscore", "ttt"]
+            ).filter(
+                (pl.col("region") == region)
+                & (pl.col("zone") == zone)
+                & (pl.col("woreda") == woreda)
+                # & (pl.col("level") == level)
+            )
         case _:
             raise ValueError("Selected dataset not found!")
 
-    return outliers_df.to_dicts(), [
-        {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
-        for i in outliers_df.columns
-        if i != "hf_id"
-    ]
-
-
-def epi_outliers_df(begin, end, factor):
-    epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv")
-
-    return epi_outliers_df
+    return df.to_dicts(), [{"field": i} for i in df.columns]
 
 
 @callback(Output("tab-outliers-region-content", "children"), Input("outliers-region-content-choice", "value"))

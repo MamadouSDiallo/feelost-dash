@@ -1,8 +1,8 @@
 region,indicator,iqr,zscore,ttt
-Amhara Regional Health Bureau,mcv1,2066.0,1502.0,2927.0
+Amhara Regional Health Bureau,ipv,1636.0,1128.0,2607.0
 Amhara Regional Health Bureau,penta3,1667.0,1123.0,2624.0
-Amhara Regional Health Bureau,rota2,1593.0,1096.0,2585.0
+Amhara Regional Health Bureau,mcv1,2066.0,1502.0,2927.0
 Amhara Regional Health Bureau,full_vacc,1982.0,1435.0,2884.0
 Amhara Regional Health Bureau,bcg,1587.0,1110.0,2338.0
-Amhara Regional Health Bureau,ipv,1636.0,1128.0,2607.0
 Amhara Regional Health Bureau,penta1,1647.0,1211.0,2620.0
+Amhara Regional Health Bureau,rota2,1593.0,1096.0,2585.0
