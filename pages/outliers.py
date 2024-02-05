@@ -9,9 +9,11 @@ import polars as pl
 dash.register_page(__name__, name="FeeLoST")
 
 hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
+epi_outliers_region_df = pl.read_csv("./data/input/epi_outliers_region_df.csv")
+epi_outliers_region_agg = pl.read_csv("./data/input/epi_outliers_region_agg.csv")
 
 
-datasets_list = ["epi"]
+datasets_list = ["EPI"]
 years = [2013, 2014, 2015]
 months = [
     "All",
@@ -37,6 +39,22 @@ levels = hf_list_df["level"].unique().to_list()
 hf_types = hf_list_df["hf_type"].unique().to_list()
 ownership = hf_list_df["ownership"].unique().to_list()
 
+tab_outliers_region = html.Div(
+    children=[
+        html.Br(),
+        dcc.Dropdown(
+            id="outliers-region-content-choice",
+            options=["Table", "Trend"],
+            value="Table",
+            style={"width": "50%"},
+        ),
+        html.Br(),
+        html.Div(id="tab-outliers-region-content"),
+    ],
+    # style={"padding": 10},
+)
+
+
 # Frontend
 layout = html.Div(
     children=[
@@ -46,8 +64,8 @@ layout = html.Div(
                     children=[
                         # html.H6("Datasets"),
                         html.Br(),
-                        html.Label("Dataset"),
-                        dcc.Dropdown(id="datasets-list", options=datasets_list, value="epi"),
+                        html.Label("Department"),
+                        dcc.Dropdown(id="datasets-list", options=datasets_list, value="EPI"),
                         html.Br(),
                         html.Label("Number of rows"),
                         html.Div(dcc.Input(id="number-rows", type="number", value=15)),
@@ -220,28 +238,26 @@ layout = html.Div(
                         html.H5("Summary", style={"padding": 10}),
                         dbc.Row(
                             [
-                                dash_table.DataTable(
-                                    id="outliers-agg",
-                                    editable=False,
-                                    filter_action="native",
-                                    sort_action="native",
-                                    sort_mode="single",
-                                    column_selectable="multi",
-                                    page_action="native",
-                                    page_current=0,
-                                    page_size=15,
-                                    style_table={
-                                        "overflowX": "auto",
-                                        "maxWidth": "100%",
-                                        "marginLeft": "auto",
-                                        "marginRight": "auto",
-                                    },
+                                dcc.Tabs(
+                                    id="tabs-outliers",
+                                    value="tab-outliers-region",
+                                    children=[
+                                        dcc.Tab(
+                                            label="Region", value="tab-outliers-region", children=tab_outliers_region
+                                        ),
+                                        dcc.Tab(label="Administrative Level", value="tab-outliers-level"),
+                                        dcc.Tab(label="Health Facility Type", value="tab-outliers-type"),
+                                        dcc.Tab(label="Ownership", value="tab-outliers-ownership"),
+                                        dcc.Tab(label="Health Facility", value="tab-outliers-hf"),
+                                    ],
                                 ),
+                                html.Div(id="tabs-content-outliers"),
                             ],
                             style={"padding": 10},
                         ),
                     ]
                 ),
+                html.Br(),
                 html.Br(),
                 dbc.Card(
                     [
@@ -411,3 +427,62 @@ def epi_outliers_df(begin, end, factor):
     epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv")
 
     return epi_outliers_df
+
+
+@callback(Output("tab-outliers-region-content", "children"), Input("outliers-region-content-choice", "value"))
+def outliers_tab_region(choice):
+    match choice:
+        case "Table":
+            return html.Div(
+                [
+                    dash_table.DataTable(
+                        id="outliers-region-tbl",
+                        data=epi_outliers_region_agg.to_dicts(),
+                        columns=[
+                            {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
+                            for i in epi_outliers_region_agg.columns
+                        ],
+                        editable=False,
+                        filter_action="native",
+                        sort_action="native",
+                        sort_mode="single",
+                        column_selectable="multi",
+                        page_action="native",
+                        page_current=0,
+                        page_size=15,
+                        style_table={
+                            "overflowX": "auto",
+                            "maxWidth": "100%",
+                            "marginLeft": "auto",
+                            "marginRight": "auto",
+                        },
+                    ),
+                ]
+            )
+        case "Trend":
+            return html.Div([html.H6("Test-2")])
+        case _:
+            pass
+
+
+# @callback()
+# def outliers_tab_hf():
+#     return (
+#         dash_table.DataTable(
+#             id="outliers-agg",
+#             editable=False,
+#             filter_action="native",
+#             sort_action="native",
+#             sort_mode="single",
+#             column_selectable="multi",
+#             page_action="native",
+#             page_current=0,
+#             page_size=15,
+#             style_table={
+#                 "overflowX": "auto",
+#                 "maxWidth": "100%",
+#                 "marginLeft": "auto",
+#                 "marginRight": "auto",
+#             },
+#         ),
+#     )
