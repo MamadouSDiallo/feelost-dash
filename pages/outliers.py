@@ -5,12 +5,20 @@ import dash_bootstrap_components as dbc
 
 import polars as pl
 
+import plotly.io as pio
+import plotly.express as px
+
+pio.templates.default = "seaborn"
 
 dash.register_page(__name__, name="FeeLoST")
 
 hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
+epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv")
+epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
 epi_outliers_region_df = pl.read_csv("./data/input/epi_outliers_region_df.csv")
 epi_outliers_region_agg = pl.read_csv("./data/input/epi_outliers_region_agg.csv")
+epi_outliers_level_df = pl.read_csv("./data/input/epi_outliers_level_df.csv")
+epi_outliers_level_agg = pl.read_csv("./data/input/epi_outliers_level_agg.csv")
 
 
 datasets_list = ["EPI"]
@@ -39,6 +47,8 @@ levels = hf_list_df["level"].unique().to_list()
 hf_types = hf_list_df["hf_type"].unique().to_list()
 ownership = hf_list_df["ownership"].unique().to_list()
 
+indicators = epi_outliers_df["indicator"].unique().to_list()
+
 tab_outliers_region = html.Div(
     children=[
         html.Br(),
@@ -50,6 +60,38 @@ tab_outliers_region = html.Div(
         ),
         html.Br(),
         html.Div(id="tab-outliers-region-content"),
+    ],
+    # style={"padding": 10},
+)
+
+tab_outliers_level = html.Div(
+    children=[
+        html.Br(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.Dropdown(
+                        id="outliers-level-content-choice",
+                        options=["Table", "Trend"],
+                        value="Table",
+                        # style={"width": "50%"},
+                    ),
+                    width=5,
+                ),
+                dbc.Col(
+                    dcc.Dropdown(
+                        id="outliers-level-content-choice2",
+                        options=indicators,
+                        value="bcg",
+                        # style={"width": "50%"},
+                    ),
+                    width=5,
+                ),
+            ],
+            style={"width": "50%"},
+        ),
+        html.Br(),
+        html.Div(id="tab-outliers-level-content"),
     ],
     # style={"padding": 10},
 )
@@ -243,9 +285,15 @@ layout = html.Div(
                                     value="tab-outliers-region",
                                     children=[
                                         dcc.Tab(
-                                            label="Region", value="tab-outliers-region", children=tab_outliers_region
+                                            label="Region",
+                                            value="tab-outliers-region",
+                                            children=tab_outliers_region,
                                         ),
-                                        dcc.Tab(label="Administrative Level", value="tab-outliers-level"),
+                                        dcc.Tab(
+                                            label="Administrative Level",
+                                            value="tab-outliers-level",
+                                            children=tab_outliers_level,
+                                        ),
                                         dcc.Tab(label="Health Facility Type", value="tab-outliers-type"),
                                         dcc.Tab(label="Ownership", value="tab-outliers-ownership"),
                                         dcc.Tab(label="Health Facility", value="tab-outliers-hf"),
@@ -346,45 +394,50 @@ layout = html.Div(
 # Backend
 
 
-@callback(
-    Output(component_id="outliers-agg", component_property="data"),
-    Output(component_id="outliers-agg", component_property="columns"),
-    Input(component_id="datasets-list", component_property="value"),
-    Input(component_id="starting-year", component_property="value"),
-    Input(component_id="starting-month", component_property="value"),
-    Input(component_id="ending-year", component_property="value"),
-    Input(component_id="ending-month", component_property="value"),
-    Input(component_id="iqr-mult", component_property="value"),
-    Input(component_id="sd-mult", component_property="value"),
-    Input(component_id="ttt-perc", component_property="value"),
-)
-def compute_outliers_agg(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
-    begin = {"month": start_month, "year": start_year}
-    end = {"month": end_month, "year": end_year}
-    factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
+# @callback(
+#     Output(component_id="outliers-agg", component_property="data"),
+#     Output(component_id="outliers-agg", component_property="columns"),
+#     Input(component_id="datasets-list", component_property="value"),
+#     Input(component_id="starting-year", component_property="value"),
+#     Input(component_id="starting-month", component_property="value"),
+#     Input(component_id="ending-year", component_property="value"),
+#     Input(component_id="ending-month", component_property="value"),
+#     Input(component_id="iqr-mult", component_property="value"),
+#     Input(component_id="sd-mult", component_property="value"),
+#     Input(component_id="ttt-perc", component_property="value"),
+# )
+# def compute_outliers_agg(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
+#     begin = {"month": start_month, "year": start_year}
+#     end = {"month": end_month, "year": end_year}
+#     factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
 
-    # before_months = []
-    # month1 = "January"
-    # while month1 != begin["month"]:
-    #     before_months.append(month1)
+#     # before_months = []
+#     # month1 = "January"
+#     # while month1 != begin["month"]:
+#     #     before_months.append(month1)
 
-    # after_months = []
-    # month2 = months.copy()
-    # while month2 != begin["month"]:
-    #     after_months.remove(month2)
-    # after_months.remove(month2)
+#     # after_months = []
+#     # month2 = months.copy()
+#     # while month2 != begin["month"]:
+#     #     after_months.remove(month2)
+#     # after_months.remove(month2)
 
-    match dataset:
-        case "epi":
-            outliers_agg = epi_outliers_agg(begin, end, factor)
-        case _:
-            raise ValueError("Selected dataset not found!")
+#     match dataset:
+#         case "epi":
+#             outliers_agg = epi_outliers_agg(begin, end, factor)
+#         case _:
+#             raise ValueError("Selected dataset not found!")
 
-    return outliers_agg.to_dicts(), [
-        {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
-        for i in outliers_agg.columns
-        if i != "hf_id"
-    ]
+#     return outliers_agg.to_dicts(), [
+#         {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
+#         for i in outliers_agg.columns
+#         if i != "hf_id"
+#     ]
+
+# def epi_outliers_agg(begin, end, factor):
+#     epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
+
+#     return epi_outliers_agg
 
 
 @callback(
@@ -405,7 +458,7 @@ def compute_outliers_df(dataset, start_year, start_month, end_year, end_month, i
     factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
 
     match dataset:
-        case "epi":
+        case "EPI":
             outliers_df = epi_outliers_df(begin, end, factor)
         case _:
             raise ValueError("Selected dataset not found!")
@@ -415,12 +468,6 @@ def compute_outliers_df(dataset, start_year, start_month, end_year, end_month, i
         for i in outliers_df.columns
         if i != "hf_id"
     ]
-
-
-def epi_outliers_agg(begin, end, factor):
-    epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
-
-    return epi_outliers_agg
 
 
 def epi_outliers_df(begin, end, factor):
@@ -460,7 +507,81 @@ def outliers_tab_region(choice):
                 ]
             )
         case "Trend":
-            return html.Div([html.H6("Test-2")])
+            # y_min = epi_outliers_region_df["iqr"].min()
+            # y_max = epi_outliers_region_df["iqr"].max()
+            df = epi_outliers_region_df.select(["period", "iqr", "indicator"])
+            fig = px.scatter(
+                data_frame=df,
+                x="period",
+                y="iqr",
+                # range_y=[0.9 * y_min, 1.1 * y_max],
+                color="indicator",
+                # symbol=incons_flag,
+                # size=nb_infants,
+                title="Number of Outliers by Vaccine",
+            )
+            fig.update_xaxes(tickangle=60, title_text=None)
+            fig.update_yaxes(title_text=None)
+            fig.update_layout(legend_title_text="Vaccine")
+            return html.Div([dcc.Graph(figure=fig)])
+        case _:
+            pass
+
+
+@callback(
+    Output("tab-outliers-level-content", "children"),
+    Input("outliers-level-content-choice", "value"),
+    Input("outliers-level-content-choice2", "value"),
+)
+def outliers_tab_level(choice, vaccine):
+    match choice:
+        case "Table":
+            return html.Div(
+                [
+                    dash_table.DataTable(
+                        id="outliers-level-tbl",
+                        data=epi_outliers_level_agg.to_dicts(),
+                        columns=[
+                            {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
+                            for i in epi_outliers_level_agg.columns
+                        ],
+                        editable=False,
+                        filter_action="native",
+                        sort_action="native",
+                        sort_mode="single",
+                        column_selectable="multi",
+                        page_action="native",
+                        page_current=0,
+                        page_size=15,
+                        style_table={
+                            "overflowX": "auto",
+                            "maxWidth": "100%",
+                            "marginLeft": "auto",
+                            "marginRight": "auto",
+                        },
+                    ),
+                ]
+            )
+        case "Trend":
+            df = (
+                epi_outliers_level_df.filter(pl.col("indicator") == vaccine)
+                .select(["period", "iqr", "level"])
+                .cast({"level": pl.Utf8})
+            )
+            fig = px.scatter(
+                data_frame=df,
+                x="period",
+                y="iqr",
+                # range_y=[0, 1.1 * y_max],
+                color="level",
+                # symbol=incons_flag,
+                # size=nb_infants,
+                title="Number of Outliers by Vaccine",
+            )
+            fig.update_xaxes(tickangle=60, title_text=None)
+            fig.update_yaxes(title_text=None)
+            fig.update_layout(legend_title_text="Level")
+            return html.Div([dcc.Graph(figure=fig)])
         case _:
             pass
 
