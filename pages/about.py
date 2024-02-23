@@ -72,24 +72,62 @@ layout = html.Div(
                                         dcc.Markdown(
                                             """
                                             The IQR is a measure of statistical dispersion defined as $IQR=Q3-Q1$, where $Q3$ is the third quartile and $Q1$ is the first quartile.
-                                            - Data points that fall below $Q1 - 1.5 * IQR$ or above $Q3 + 1.5 * IQR$ are often considered **outliers**.
-                                            - Data points that fall below $Q1 - 3 * IQR$ or above $Q3 + 3 * IQR$ are often considered **extreme** values.""",
+                                            - Data points that fall below $Q1 - 1.5 * IQR$ or above $Q3 + 1.5 * IQR$ are considered **outliers**.
+                                            - Data points that fall below $Q1 - 3 * IQR$ or above $Q3 + 3 * IQR$ are considered **extreme** values.
+                                            """,
+                                            mathjax=True,
+                                        ),
+                                        html.Br(),
+                                        dcc.Markdown(
+                                            """
+                                            In FeeLoST, using the IQR method, we will use the definition of extreme values as the default definition for outliers.
+                                            """,
+                                            mathjax=True,
+                                        ),
+                                    ]
+                                ),
+                                html.Li(
+                                    [
+                                        html.A(html.B("Metrod 2: using the z-scores")),
+                                        dcc.Markdown(
+                                            """
+                                            The z-score is defined as $$z = (x - \\mu) / \\sigma$$, where $\\mu$ is the mean and $\\sigma$ is the standard deviation. The z-scores have a mean of 0 and a standard deviation of 1. Under the normal distribution, 99.7% of the data points lie between +/- 3 standard deviation. Using this fact, an outlier is defined as a data point with a z-score of less than -3 or greather than 3.  
+                                            """,
+                                            mathjax=True,
+                                        ),
+                                    ]
+                                ),
+                                html.Li(
+                                    [
+                                        html.A(html.B("Metrod 3: using the Thompson Tau Test (TTT)")),
+                                        dcc.Markdown(
+                                            """
+                                            The modifed Thompson Tau Test (TTT) may more appropriate to detect outliers for data points that do not follow the normal distribution. The tau ($\\tau$) scores are based on the following expression using 
+                                            $$
+                                            \\tau = \\frac{t_{\\alpha/2,n-2}*(n-1)}{\\sqrt{n}\\sqrt{n-2+t_{\\alpha/2,n-2}^2}},
+                                            $$
+                                            where $t_{\\alpha/2,n-2}$ is the student's $t$ value based on the level of significance $\\alpha$ and a degree of freedom ($df$) equal to n-2.
+
+                                            To detect outliers using the TTT method, we follow the steps below
+
+                                            - Calculate the absolute difference $\\delta_i$ for each record $i$ as follows  $\\delta_i = {|x_i - \\bar{x}|}$, where $\\bar{x}$ is the sample mean.
+                                            - Calculate the $\\tau$ score based on the sample size and the desired significant level using the formula above. 
+                                            - Compare the absolute differences to $\\tau*s$, where $s$ is the standard deviation for the sample. 
+                                            - Outliers are the data points with $\\delta_i > \\tau*s$.
+
+                                            Using a significant level of $\\alpha=0.003$ corresponds to a confidence level of $1-\\alpha=0.997$. 
+                                            """,
                                             mathjax=True,
                                         ),
                                     ]
                                 ),
                                 html.Br(),
-                                html.Li(
-                                    [
-                                        html.A(html.B("Metrod 2: using the z-scores")),
-                                    ]
-                                ),
+                                html.H5("Inconsistencies"),
+                                html.P("TBD"),
                                 html.Br(),
-                                html.Li(
-                                    [
-                                        html.A(html.B("Metrod 3: using the Thompson Tau Test (TTT)")),
-                                    ]
-                                ),
+                                html.H5("Missingness"),
+                                html.P("TBD"),
+                                html.Br(),
                             ]
                         ),
                         html.H3("Contact Us"),
