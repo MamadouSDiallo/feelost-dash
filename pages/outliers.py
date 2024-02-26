@@ -10,17 +10,25 @@ import polars as pl
 import plotly.io as pio
 import plotly.express as px
 
+from script.outlier_metrics import month_to_numeric
+
 pio.templates.default = "seaborn"
 
-dash.register_page(__name__, name="FeeLoST")
+dash.register_page(__name__, name="FeeLoST", suppress_callback_exceptions=True)
 
 hf_list_df = pl.read_csv("./data/input/hf_list_df.csv")
 
-epi_outliers_df = pl.read_csv("./data/input/epi_outliers_df.csv").join(hf_list_df, on=["hf_id", "hf_name"])
+epi_outliers_df = (
+    pl.read_csv("./data/input/epi_outliers_df.csv")
+    .filter(pl.col("iqr").is_not_nan() | pl.col("zscore").is_not_nan() | pl.col("ttt").is_not_nan())
+    .filter((pl.col("iqr") > 0) | (pl.col("zscore") > 0) | (pl.col("ttt") > 0))
+    .join(hf_list_df, on=["hf_id", "hf_name"])
+)
+
 
 epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
 epi_outliers_region_df = pl.read_csv("./data/input/epi_outliers_region_df.csv")
-epi_outliers_region_agg = pl.read_csv("./data/input/epi_outliers_region_agg.csv")
+# epi_outliers_region_agg = pl.read_csv("./data/input/epi_outliers_region_agg.csv")
 epi_outliers_level_df = pl.read_csv("./data/input/epi_outliers_level_df.csv")
 epi_outliers_level_agg = pl.read_csv("./data/input/epi_outliers_level_agg.csv")
 
@@ -44,12 +52,12 @@ months = [
 ]
 quarters = ["All", "Q1", "Q2", "Q3", "Q4"]
 
-regions = hf_list_df["region"].unique().to_list()
-zones = hf_list_df["zone"].unique().to_list()
-woredas = hf_list_df["woreda"].unique().to_list()
-levels = hf_list_df["level"].unique().to_list()
-hf_types = hf_list_df["hf_type"].unique().to_list()
-ownership = hf_list_df["ownership"].unique().to_list()
+regions = epi_outliers_df["region"].unique().to_list()
+zones = epi_outliers_df["zone"].unique().to_list()
+woredas = epi_outliers_df["woreda"].unique().to_list()
+levels = epi_outliers_df["level"].unique().to_list()
+hf_types = epi_outliers_df["hf_type"].unique().to_list()
+ownership = epi_outliers_df["ownership"].unique().to_list()
 
 initial_vals = (
     epi_outliers_df.select(["region", "zone", "woreda", "level", "hf_type", "ownership"])
@@ -63,7 +71,7 @@ tab_outliers_region = html.Div(
     children=[
         html.Br(),
         dcc.Dropdown(
-            id="outliers-region-content-choice",
+            id="tab-outliers-region-choice",
             options=["Table", "Trend"],
             value="Table",
             style={"width": "50%"},
@@ -111,180 +119,160 @@ tab_outliers_level = html.Div(
 layout = html.Div(
     children=[
         html.Div(
-            dbc.Card(
-                dbc.CardBody(
-                    children=[
-                        # html.H6("Datasets"),
-                        html.Br(),
-                        html.Label("Department"),
-                        dcc.Dropdown(id="datasets-list", options=datasets_list, value="EPI"),
-                        html.Br(),
-                        html.Label("Number of rows"),
-                        html.Div(dcc.Input(id="number-rows", type="number", value=15)),
-                        html.Br(),
-                        html.Br(),
-                        html.Label("Starting period"),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        # html.Label("Year: "),
-                                        dcc.Dropdown(
-                                            id="starting-year",
-                                            options=years,
-                                            value=2013,
-                                        ),
-                                    ],
-                                    width=5,
-                                ),
-                                dbc.Col(
-                                    [
-                                        # html.Label("Month: "),
-                                        dcc.Dropdown(
-                                            id="starting-month",
-                                            options=months,
-                                            value="November",
-                                        ),
-                                    ],
-                                    width=7,
-                                ),
-                            ],
-                            # style={"display": "flex", "flexDirection": "row"},
-                        ),
-                        html.Br(),
-                        html.Label("Ending period"),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        # html.Label("Year: "),
-                                        dcc.Dropdown(
-                                            id="ending-year",
-                                            options=years,
-                                            value=2015,
-                                        ),
-                                    ],
-                                    width=5,
-                                ),
-                                dbc.Col(
-                                    [
-                                        # html.Label("Month: "),
-                                        dcc.Dropdown(
-                                            id="ending-month",
-                                            options=months,
-                                            value="October",
-                                        ),
-                                    ],
-                                    width=7,
-                                ),
-                            ]
-                        ),
-                        # html.Label("Time period (in years)"),
-                        # dcc.RangeSlider(
-                        #     id="selected-years",
-                        #     min=2012,
-                        #     max=2020,
-                        #     step=1,
-                        #     value=[2014, 2014],
-                        #     marks={i: str(i) for i in range(2012, 2021, 2)},
-                        # ),
-                        # html.Br(),
-                        # html.Label("Quarters of interest"),
-                        # dcc.Dropdown(id="selected-quarters", options=quarters, value="All", multi=True),
-                        # html.Br(),
-                        # html.Label("Months of interest"),
-                        # dcc.Dropdown(id="selected-months", options=months, value="All", multi=True),
-                    ],
-                )
-            ),
-            style={"padding": 10, "flex": 1},
-        ),
-        html.Div(
-            children=[
+            [
                 dbc.Card(
                     dbc.CardBody(
-                        [
-                            html.Div(
+                        children=[
+                            # html.H6("Datasets"),
+                            html.Br(),
+                            html.Label("Department"),
+                            dcc.Dropdown(id="datasets-list", options=datasets_list, value="EPI"),
+                            html.Br(),
+                            html.Label("Number of rows"),
+                            html.Div(dcc.Input(id="number-rows", type="number", value=15)),
+                            html.Br(),
+                            html.Br(),
+                            html.Label("Starting period"),
+                            dbc.Row(
                                 [
-                                    html.Button(
-                                        "Count",
-                                        id="btn-count",
-                                        n_clicks=0,
-                                        className="bg-primary text-white p-2 mb-2 text-center",
-                                        style={"flex": 1},
+                                    dbc.Col(
+                                        [
+                                            # html.Label("Year: "),
+                                            dcc.Dropdown(
+                                                id="starting-year",
+                                                options=years,
+                                                value=2013,
+                                            ),
+                                        ],
+                                        width=5,
                                     ),
-                                    html.Button(
-                                        "Percentage",
-                                        id="btn-perc",
-                                        n_clicks=0,
-                                        className="bg-primary text-white p-2 mb-2 text-center",
-                                        style={"flex": 1},
+                                    dbc.Col(
+                                        [
+                                            # html.Label("Month: "),
+                                            dcc.Dropdown(
+                                                id="starting-month",
+                                                options=months,
+                                                value="November",
+                                            ),
+                                        ],
+                                        width=7,
                                     ),
                                 ],
-                                style={
-                                    "display": "flex",
-                                    "flexDirection": "row",
-                                    "gap": "150px",
-                                    "align-items": "center",
-                                    "padding": 30,
-                                    "width": "100%",
-                                    "height": "80px",
-                                },
-                            )
+                                # style={"display": "flex", "flexDirection": "row"},
+                            ),
+                            html.Br(),
+                            html.Label("Ending period"),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            # html.Label("Year: "),
+                                            dcc.Dropdown(
+                                                id="ending-year",
+                                                options=years,
+                                                value=2015,
+                                            ),
+                                        ],
+                                        width=5,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            # html.Label("Month: "),
+                                            dcc.Dropdown(
+                                                id="ending-month",
+                                                options=months,
+                                                value="October",
+                                            ),
+                                        ],
+                                        width=7,
+                                    ),
+                                ]
+                            ),
                         ],
                     )
                 ),
                 html.Br(),
                 dbc.Card(
-                    [
-                        # html.H5("Metric Controls"),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        html.Label("Interquartile Range (IQR)"),
-                                        html.Div(dcc.Input(id="iqr-mult", type="number", value=3)),
-                                        # html.Button(
-                                        #     "Select",
-                                        #     id="btn-iqr",
-                                        #     n_clicks=0,
-                                        #     className="bg-primary text-white p-2 mb-2 text-center",
-                                        # ),
-                                    ]
-                                ),
-                                dbc.Col(
-                                    [
-                                        html.Label("Standard Deviation (SD)"),
-                                        html.Div(dcc.Input(id="sd-mult", type="number", value=3)),
-                                        # html.Button(
-                                        #     "Select",
-                                        #     id="btn-sd",
-                                        #     n_clicks=0,
-                                        #     className="bg-primary text-white p-2 mb-2 text-center",
-                                        # ),
-                                    ]
-                                ),
-                                dbc.Col(
-                                    [
-                                        html.Label("Thompson Tau Test (TTT)"),
-                                        html.Div(dcc.Input(id="ttt-perc", type="number", min=1, max=100, value=99)),
-                                        # html.Button(
-                                        #     "Select",
-                                        #     id="btn-ttt",
-                                        #     n_clicks=0,
-                                        #     className="bg-primary text-white p-2 mb-2 text-center",
-                                        # ),
-                                    ]
-                                ),
-                            ],
-                            style={
-                                "padding": 10,
-                                # "align-items": "center",
-                            },
-                        ),
-                    ],
+                    dbc.CardBody(
+                        children=[
+                            # html.H6("Datasets"),
+                            html.Br(),
+                            html.Label("Indicator class"),
+                            dcc.Dropdown(id="indicator-class", options=["Count", "Percentage"], value="Count"),
+                            html.Br(),
+                            html.Label("Outlier parameters"),
+                            html.Br(),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            html.Label("IQR: "),
+                                        ],
+                                        width=3,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dcc.Dropdown(
+                                                id="iqr-param",
+                                                options=[1.5, 3, 5],
+                                                value=3,
+                                            ),
+                                        ],
+                                        width=5,
+                                    ),
+                                ],
+                                style={"padding-left": 20, "padding-top": 5},
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            html.Label("Z-score: "),
+                                        ],
+                                        width=3,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dcc.Dropdown(
+                                                id="iqr-param",
+                                                options=[2, 3, 5],
+                                                value=3,
+                                            ),
+                                        ],
+                                        width=5,
+                                    ),
+                                ],
+                                style={"padding-left": 20, "padding-top": 5},
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            html.Label("TTT: "),
+                                        ],
+                                        width=3,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dcc.Dropdown(
+                                                id="iqr-param",
+                                                options=[0.95, 0.99],
+                                                value=0.99,
+                                            ),
+                                        ],
+                                        width=5,
+                                    ),
+                                ],
+                                style={"padding-left": 20, "padding-top": 5},
+                            ),
+                        ],
+                    )
                 ),
-                html.Br(),
+            ],
+            style={"padding": 10, "flex": 1},
+        ),
+        html.Div(
+            children=[
                 dbc.Card(
                     [
                         html.H5("Summary", style={"padding": 10}),
@@ -292,7 +280,7 @@ layout = html.Div(
                             [
                                 dcc.Tabs(
                                     id="tabs-outliers",
-                                    value="tab-outliers-region",
+                                    value="tab-outliers-region",  # default selected tab
                                     children=[
                                         dcc.Tab(
                                             label="Region",
@@ -385,12 +373,7 @@ layout = html.Div(
                             style={"padding": 10},
                         ),
                         dbc.Row(
-                            [
-                                dag.AgGrid(
-                                    id="outliers-df",
-                                ),
-                            ],
-                            style={"padding": 10},
+                            html.Div(id="tab-outliers-df-content"),
                         ),
                     ]
                 ),
@@ -403,58 +386,30 @@ layout = html.Div(
 )
 
 
-# Backend
+def compute_outliers_zones(df, region):
+
+    df = df.select(["region", "zone"]).filter((pl.col("region").is_in(region)))
+    zones = df["zone"].unique().to_list()
+
+    return zones
 
 
-# @callback(
-#     Output(component_id="outliers-agg", component_property="data"),
-#     Output(component_id="outliers-agg", component_property="columns"),
-#     Input(component_id="datasets-list", component_property="value"),
-#     Input(component_id="starting-year", component_property="value"),
-#     Input(component_id="starting-month", component_property="value"),
-#     Input(component_id="ending-year", component_property="value"),
-#     Input(component_id="ending-month", component_property="value"),
-#     Input(component_id="iqr-mult", component_property="value"),
-#     Input(component_id="sd-mult", component_property="value"),
-#     Input(component_id="ttt-perc", component_property="value"),
-# )
-# def compute_outliers_agg(dataset, start_year, start_month, end_year, end_month, iqr_fct, sd_fct, ttt_perc):
-#     begin = {"month": start_month, "year": start_year}
-#     end = {"month": end_month, "year": end_year}
-#     factor = {"iqr": iqr_fct, "sd": sd_fct, "ttt": (100 - (100 - ttt_perc) / 2) / 100}
+def compute_outliers_woredas(df, region, zone):
 
-#     # before_months = []
-#     # month1 = "January"
-#     # while month1 != begin["month"]:
-#     #     before_months.append(month1)
+    df = df.select(["region", "zone", "woreda"]).filter(
+        (pl.col("region").is_in(region)) & (pl.col("zone").is_in(zone))
+    )
+    woredas = df["woreda"].unique().to_list()
 
-#     # after_months = []
-#     # month2 = months.copy()
-#     # while month2 != begin["month"]:
-#     #     after_months.remove(month2)
-#     # after_months.remove(month2)
-
-#     match dataset:
-#         case "epi":
-#             outliers_agg = epi_outliers_agg(begin, end, factor)
-#         case _:
-#             raise ValueError("Selected dataset not found!")
-
-#     return outliers_agg.to_dicts(), [
-#         {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
-#         for i in outliers_agg.columns
-#         if i != "hf_id"
-#     ]
-
-# def epi_outliers_agg(begin, end, factor):
-#     epi_outliers_agg = pl.read_csv("./data/input/epi_outliers_agg.csv")
-
-#     return epi_outliers_agg
+    return woredas
 
 
 @callback(
-    Output(component_id="outliers-df", component_property="rowData"),
-    Output(component_id="outliers-df", component_property="columnDefs"),
+    Output(component_id="tab-outliers-df-content", component_property="children"),
+    Output(component_id="outliers-zone", component_property="options"),
+    Output(component_id="outliers-zone", component_property="value"),
+    Output(component_id="outliers-woreda", component_property="options"),
+    Output(component_id="outliers-woreda", component_property="value"),
     Input(component_id="datasets-list", component_property="value"),
     Input(component_id="outliers-region", component_property="value"),
     Input(component_id="outliers-zone", component_property="value"),
@@ -468,31 +423,99 @@ def compute_outliers_df(dataset, region, zone, woreda, level, type, ownership):
     match dataset:
         case "EPI":
             df = epi_outliers_df.select(
-                ["region", "zone", "woreda", "level", "hf_type", "ownership", "indicator", "iqr", "zscore", "ttt"]
-            ).filter(
-                (pl.col("region") == region)
-                & (pl.col("zone") == zone)
-                & (pl.col("woreda") == woreda)
-                # & (pl.col("level") == level)
+                [
+                    "hf_name",
+                    "region",
+                    "zone",
+                    "woreda",
+                    "level",
+                    "hf_type",
+                    "ownership",
+                    "indicator",
+                    "iqr",
+                    "zscore",
+                    "ttt",
+                ]
             )
         case _:
             raise ValueError("Selected dataset not found!")
 
-    return df.to_dicts(), [{"field": i} for i in df.columns]
+    zones = compute_outliers_zones(df, [region])
+    woredas = compute_outliers_woredas(df, [region], [zone])
+    # breakpoint()
+
+    df2 = df.filter(
+        pl.col("region").is_in([region]), pl.col("zone").is_in([zone]), pl.col("woreda").is_in([woreda])
+    )  # .filter(pl.col("level").is_in([level]) & pl.col("hf_type").is_in([type]) & pl.col("ownership").is_in([ownership]))
+
+    return (
+        [
+            dag.AgGrid(
+                rowData=df2.to_dicts(),
+                columnDefs=[{"field": i} for i in df2.columns],
+                defaultColDef={"filter": True, "sortable": True, "floatingFilter": True},
+                persistence=True,
+            )
+        ],
+        zones,
+        zone,
+        woredas,
+        woreda,
+    )  # df.to_dicts(), [{"field": i} for i in df.columns]
 
 
-@callback(Output("tab-outliers-region-content", "children"), Input("outliers-region-content-choice", "value"))
-def outliers_tab_region(choice):
+@callback(
+    Output("tab-outliers-region-content", "children"),
+    Input("tab-outliers-region-choice", "value"),
+    Input("starting-month", "value"),
+    Input("starting-year", "value"),
+    Input("ending-month", "value"),
+    Input("ending-year", "value"),
+)
+def outliers_tab_region(choice, start_month_name, start_year, end_month_name, end_year):
+
+    start_month = month_to_numeric(start_month_name)
+    end_month = month_to_numeric(end_month_name)
+
+    # breakpoint()
+
+    if start_year == end_year:
+        epi_outliers_region_df2 = epi_outliers_region_df.filter(
+            (
+                (pl.col("month_code") >= start_month)
+                & (pl.col("month_code") <= end_month)
+                & (pl.col("year") == end_year)
+            )
+        )
+    elif start_year < end_year:
+        epi_outliers_region_df2 = epi_outliers_region_df.filter(
+            ((pl.col("month_code") >= start_month) & (pl.col("year") == start_year))
+            | ((pl.col("month_code") <= end_month) & (pl.col("year") == end_year))
+            | ((pl.col("year") > start_year) & (pl.col("year") < end_year))
+        )
+    else:
+        raise ValueError("Start date must be before than end date!")
+
+    epi_outliers_region_agg2 = (
+        epi_outliers_region_df2.group_by(["region", "indicator"])
+        .agg(
+            pl.col("iqr").drop_nans().sum().alias("iqr"),
+            pl.col("zscore").drop_nans().sum().alias("zscore"),
+            pl.col("ttt").drop_nans().sum().alias("ttt"),
+        )
+        .sort(by=["region", "indicator"])
+    )
+
     match choice:
         case "Table":
             return html.Div(
                 [
                     dash_table.DataTable(
                         id="outliers-region-tbl",
-                        data=epi_outliers_region_agg.to_dicts(),
+                        data=epi_outliers_region_agg2.to_dicts(),
                         columns=[
                             {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
-                            for i in epi_outliers_region_agg.columns
+                            for i in epi_outliers_region_agg2.columns
                         ],
                         editable=False,
                         filter_action="native",
@@ -514,7 +537,7 @@ def outliers_tab_region(choice):
         case "Trend":
             # y_min = epi_outliers_region_df["iqr"].min()
             # y_max = epi_outliers_region_df["iqr"].max()
-            df = epi_outliers_region_df.select(["period", "iqr", "indicator"])
+            df = epi_outliers_region_df2.select(["period", "iqr", "indicator"])
             fig = px.scatter(
                 data_frame=df,
                 x="period",
@@ -589,26 +612,3 @@ def outliers_tab_level(choice, vaccine):
             return html.Div([dcc.Graph(figure=fig)])
         case _:
             pass
-
-
-# @callback()
-# def outliers_tab_hf():
-#     return (
-#         dash_table.DataTable(
-#             id="outliers-agg",
-#             editable=False,
-#             filter_action="native",
-#             sort_action="native",
-#             sort_mode="single",
-#             column_selectable="multi",
-#             page_action="native",
-#             page_current=0,
-#             page_size=15,
-#             style_table={
-#                 "overflowX": "auto",
-#                 "maxWidth": "100%",
-#                 "marginLeft": "auto",
-#                 "marginRight": "auto",
-#             },
-#         ),
-#     )
