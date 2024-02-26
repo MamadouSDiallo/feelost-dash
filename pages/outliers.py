@@ -198,7 +198,7 @@ layout = html.Div(
                             # html.H6("Datasets"),
                             html.Br(),
                             html.Label("Indicator class"),
-                            dcc.Dropdown(id="indicator-class", options=["Count", "Percentage"], value="Count"),
+                            dcc.Dropdown(id="indicator-class", options=["Count"], value="Count"),
                             html.Br(),
                             html.Label("Outlier parameters"),
                             html.Br(),
@@ -275,7 +275,19 @@ layout = html.Div(
             children=[
                 dbc.Card(
                     [
-                        html.H5("Summary", style={"padding": 10}),
+                        html.H3("Summary"),
+                        html.P("The summary section provides"),
+                        html.Ul(
+                            [
+                                html.Li(
+                                    html.A(
+                                        "Tables containing the number of outliers by several characteristics (region, level, facility type, ownership, and facility) and indicator, for each indicator."
+                                    )
+                                ),
+                                html.Li(html.A("Graphs presenting the trend of the number of outliers. ")),
+                            ]
+                        ),
+                        html.Br(),
                         dbc.Row(
                             [
                                 dcc.Tabs(
@@ -292,22 +304,27 @@ layout = html.Div(
                                             value="tab-outliers-level",
                                             children=tab_outliers_level,
                                         ),
-                                        dcc.Tab(label="Health Facility Type", value="tab-outliers-type"),
+                                        dcc.Tab(label="Facility Type", value="tab-outliers-type"),
                                         dcc.Tab(label="Ownership", value="tab-outliers-ownership"),
                                         dcc.Tab(label="Health Facility", value="tab-outliers-hf"),
                                     ],
                                 ),
                                 html.Div(id="tabs-content-outliers"),
                             ],
-                            style={"padding": 10},
+                            # style={"padding": 10},
                         ),
-                    ]
+                    ],
+                    style={"padding": 10},
                 ),
                 html.Br(),
                 html.Br(),
                 dbc.Card(
                     [
-                        html.H5("Health Facilities with Outliers", style={"padding": 10}),
+                        html.H3("Health Facilities with Outliers"),
+                        html.P("The table below shows the health facilities with outlier values."),
+                        html.P(
+                            "Users may choose the woreda of interest. In addition, users can filter the data on the table for more precise information."
+                        ),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -347,35 +364,40 @@ layout = html.Div(
                                     ]
                                 ),
                             ],
-                            style={"padding": 10},
+                            # style={"padding": 10},
                         ),
+                        # dbc.Row(
+                        #     [
+                        #         dbc.Col(
+                        #             [
+                        #                 html.Label("Level"),
+                        #                 html.Div(dcc.Dropdown(id="outliers-level", options=levels, value="")),
+                        #             ]
+                        #         ),
+                        #         dbc.Col(
+                        #             [
+                        #                 html.Label("Type"),
+                        #                 html.Div(dcc.Dropdown(id="outliers-type", options=hf_types, value="")),
+                        #             ]
+                        #         ),
+                        #         dbc.Col(
+                        #             [
+                        #                 html.Label("Ownership"),
+                        #                 html.Div(dcc.Dropdown(id="outliers-ownership", options=ownership, value="")),
+                        #             ]
+                        #         ),
+                        #     ],
+                        #     style={"padding": 10},
+                        # ),
+                        html.Br(),
                         dbc.Row(
                             [
-                                dbc.Col(
-                                    [
-                                        html.Label("Level"),
-                                        html.Div(dcc.Dropdown(id="outliers-level", options=levels, value="")),
-                                    ]
-                                ),
-                                dbc.Col(
-                                    [
-                                        html.Label("Type"),
-                                        html.Div(dcc.Dropdown(id="outliers-type", options=hf_types, value="")),
-                                    ]
-                                ),
-                                dbc.Col(
-                                    [
-                                        html.Label("Ownership"),
-                                        html.Div(dcc.Dropdown(id="outliers-ownership", options=ownership, value="")),
-                                    ]
-                                ),
+                                html.Div(id="tab-outliers-df-content"),
                             ],
-                            style={"padding": 10},
+                            # style={"padding": 10},
                         ),
-                        dbc.Row(
-                            html.Div(id="tab-outliers-df-content"),
-                        ),
-                    ]
+                    ],
+                    style={"padding": 10},
                 ),
             ],
             style={"padding": 10, "flex": 3},
@@ -414,11 +436,11 @@ def compute_outliers_woredas(df, region, zone):
     Input(component_id="outliers-region", component_property="value"),
     Input(component_id="outliers-zone", component_property="value"),
     Input(component_id="outliers-woreda", component_property="value"),
-    Input(component_id="outliers-level", component_property="value"),
-    Input(component_id="outliers-type", component_property="value"),
-    Input(component_id="outliers-ownership", component_property="value"),
+    # Input(component_id="outliers-level", component_property="value"),
+    # Input(component_id="outliers-type", component_property="value"),
+    # Input(component_id="outliers-ownership", component_property="value"),
 )
-def compute_outliers_df(dataset, region, zone, woreda, level, type, ownership):
+def compute_outliers_df(dataset, region, zone, woreda):  # , level, type, ownership):
 
     match dataset:
         case "EPI":
@@ -431,7 +453,9 @@ def compute_outliers_df(dataset, region, zone, woreda, level, type, ownership):
                     "level",
                     "hf_type",
                     "ownership",
+                    "period",
                     "indicator",
+                    "value",
                     "iqr",
                     "zscore",
                     "ttt",
