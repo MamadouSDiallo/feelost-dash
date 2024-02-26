@@ -10,7 +10,6 @@ import polars as pl
 import plotly.io as pio
 import plotly.express as px
 
-from script.outlier_metrics import month_to_numeric
 
 pio.templates.default = "seaborn"
 
@@ -400,12 +399,46 @@ layout = html.Div(
                     style={"padding": 10},
                 ),
             ],
-            style={"padding": 10, "flex": 3},
+            style={"padding": 10, "flex": 7},
         ),
     ],
     style={"display": "flex", "flexDirection": "row", "gap": "5px", "width": "100%"},
     # className="all",
 )
+
+
+# Backend Code
+def month_to_numeric(month_name: str):
+
+    # breakpoint()
+    month = month_name.lower()
+
+    if month == "january":
+        return 1
+    elif month == "february":
+        return 2
+    elif month == "march":
+        return 3
+    elif month == "april":
+        return 4
+    elif month == "may":
+        return 5
+    elif month == "june":
+        return 6
+    elif month == "july":
+        return 7
+    elif month == "august":
+        return 8
+    elif month == "september":
+        return 9
+    elif month == "october":
+        return 10
+    elif month == "november":
+        return 11
+    elif month == "december":
+        return 12
+    else:
+        raise ValueError("The provided month does not exist!")
 
 
 def compute_outliers_zones(df, region):
