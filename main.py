@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 
 
 # Initialize the app
-app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.FLATLY])
+app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.FLATLY], suppress_callback_exceptions=True)
 server = app.server
 
 # auth = dash_auth.BasicAuth(server, VALID_USERNAME_PASSWORD_PAIRS)
@@ -61,5 +61,5 @@ app.layout = html.Div(
 
 # Run the app
 if __name__ == "__main__":
-    # app.run(debug=True)
-    app.run(debug=True, host="0.0.0.0", port="8080", use_reloader=False)
+    app.run(debug=True)
+    # app.run(debug=True, host="0.0.0.0", port="8080", use_reloader=False)

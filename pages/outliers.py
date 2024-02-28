@@ -81,30 +81,14 @@ tab_outliers_region = html.Div(
     # style={"padding": 10},
 )
 
+
 tab_outliers_level = html.Div(
     children=[
         html.Br(),
-        dbc.Row(
-            [
-                dbc.Col(
-                    dcc.Dropdown(
-                        id="outliers-level-content-choice",
-                        options=["Table", "Trend"],
-                        value="Table",
-                        # style={"width": "50%"},
-                    ),
-                    width=5,
-                ),
-                dbc.Col(
-                    dcc.Dropdown(
-                        id="outliers-level-content-choice2",
-                        options=indicators,
-                        value="bcg",
-                        # style={"width": "50%"},
-                    ),
-                    width=5,
-                ),
-            ],
+        dcc.Dropdown(
+            id="tab-outliers-level-choice",
+            options=["Table", "Trend"],
+            value="Table",
             style={"width": "50%"},
         ),
         html.Br(),
@@ -112,6 +96,39 @@ tab_outliers_level = html.Div(
     ],
     # style={"padding": 10},
 )
+
+
+# tab_outliers_level2 = html.Div(
+#     children=[
+#         html.Br(),
+#         dbc.Row(
+#             [
+#                 dbc.Col(
+#                     dcc.Dropdown(
+#                         id="outliers-level-content-choice",
+#                         options=["Table", "Trend"],
+#                         value="Table",
+#                         # style={"width": "50%"},
+#                     ),
+#                     width=5,
+#                 ),
+#                 dbc.Col(
+#                     dcc.Dropdown(
+#                         id="outliers-level-content-choice2",
+#                         options=indicators,
+#                         value="bcg",
+#                         # style={"width": "50%"},
+#                     ),
+#                     width=5,
+#                 ),
+#             ],
+#             style={"width": "50%"},
+#         ),
+#         html.Br(),
+#         html.Div(id="tab-outliers-level-content"),
+#     ],
+#     # style={"padding": 10},
+# )
 
 
 # Frontend
@@ -615,20 +632,56 @@ def outliers_tab_region(choice, start_month_name, start_year, end_month_name, en
 
 @callback(
     Output("tab-outliers-level-content", "children"),
-    Input("outliers-level-content-choice", "value"),
-    Input("outliers-level-content-choice2", "value"),
+    Input("tab-outliers-level-choice", "value"),
+    Input("starting-month", "value"),
+    Input("starting-year", "value"),
+    Input("ending-month", "value"),
+    Input("ending-year", "value"),
 )
-def outliers_tab_level(choice, vaccine):
+def outliers_tab_level(choice, start_month_name, start_year, end_month_name, end_year):
+
+    start_month = month_to_numeric(start_month_name)
+    end_month = month_to_numeric(end_month_name)
+
+    # breakpoint()
+
+    if start_year == end_year:
+        epi_outliers_level_df2 = epi_outliers_level_df.filter(
+            (
+                (pl.col("month_code") >= start_month)
+                & (pl.col("month_code") <= end_month)
+                & (pl.col("year") == end_year)
+            )
+        )
+    elif start_year < end_year:
+        epi_outliers_level_df2 = epi_outliers_level_df.filter(
+            ((pl.col("month_code") >= start_month) & (pl.col("year") == start_year))
+            | ((pl.col("month_code") <= end_month) & (pl.col("year") == end_year))
+            | ((pl.col("year") > start_year) & (pl.col("year") < end_year))
+        )
+    else:
+        raise ValueError("Start date must be before than end date!")
+
+    epi_outliers_level_agg2 = (
+        epi_outliers_level_df2.group_by(["level", "indicator"])
+        .agg(
+            pl.col("iqr").drop_nans().sum().alias("iqr"),
+            pl.col("zscore").drop_nans().sum().alias("zscore"),
+            pl.col("ttt").drop_nans().sum().alias("ttt"),
+        )
+        .sort(by=["level", "indicator"])
+    )
+
     match choice:
         case "Table":
             return html.Div(
                 [
                     dash_table.DataTable(
                         id="outliers-level-tbl",
-                        data=epi_outliers_level_agg.to_dicts(),
+                        data=epi_outliers_level_agg2.to_dicts(),
                         columns=[
                             {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
-                            for i in epi_outliers_level_agg.columns
+                            for i in epi_outliers_level_agg2.columns
                         ],
                         editable=False,
                         filter_action="native",
@@ -648,24 +701,73 @@ def outliers_tab_level(choice, vaccine):
                 ]
             )
         case "Trend":
-            df = (
-                epi_outliers_level_df.filter(pl.col("indicator") == vaccine)
-                .select(["period", "iqr", "level"])
-                .cast({"level": pl.Utf8})
-            )
+            # y_min = epi_outliers_region_df["iqr"].min()
+            # y_max = epi_outliers_region_df["iqr"].max()
+            df = epi_outliers_region_df2.select(["period", "iqr", "indicator"])
             fig = px.scatter(
                 data_frame=df,
                 x="period",
                 y="iqr",
-                # range_y=[0, 1.1 * y_max],
-                color="level",
+                # range_y=[0.9 * y_min, 1.1 * y_max],
+                color="indicator",
                 # symbol=incons_flag,
                 # size=nb_infants,
                 title="Number of Outliers by Vaccine",
             )
             fig.update_xaxes(tickangle=60, title_text=None)
             fig.update_yaxes(title_text=None)
-            fig.update_layout(legend_title_text="Level")
+            fig.update_layout(legend_title_text="Vaccine")
             return html.Div([dcc.Graph(figure=fig)])
         case _:
             pass
+
+    # match choice:
+    #     case "Table":
+    #         return html.Div(
+    #             [
+    #                 dash_table.DataTable(
+    #                     id="outliers-level-tbl",
+    #                     data=epi_outliers_level_agg2.to_dicts(),
+    #                     columns=[
+    #                         {"name": i, "id": i, "deletable": True, "selectable": True, "hideable": True}
+    #                         for i in epi_outliers_level_agg2.columns
+    #                     ],
+    #                     editable=False,
+    #                     filter_action="native",
+    #                     sort_action="native",
+    #                     sort_mode="single",
+    #                     column_selectable="multi",
+    #                     page_action="native",
+    #                     page_current=0,
+    #                     page_size=15,
+    #                     style_table={
+    #                         "overflowX": "auto",
+    #                         "maxWidth": "100%",
+    #                         "marginLeft": "auto",
+    #                         "marginRight": "auto",
+    #                     },
+    #                 ),
+    #             ]
+    #         )
+    #     case "Trend":
+    #         df = (
+    #             epi_outliers_level_df.filter(pl.col("indicator") == vaccine)
+    #             .select(["period", "iqr", "level"])
+    #             .cast({"level": pl.Utf8})
+    #         )
+    #         fig = px.scatter(
+    #             data_frame=df,
+    #             x="period",
+    #             y="iqr",
+    #             # range_y=[0, 1.1 * y_max],
+    #             color="level",
+    #             # symbol=incons_flag,
+    #             # size=nb_infants,
+    #             title="Number of Outliers by Vaccine",
+    #         )
+    #         fig.update_xaxes(tickangle=60, title_text=None)
+    #         fig.update_yaxes(title_text=None)
+    #         fig.update_layout(legend_title_text="Level")
+    #         return html.Div([dcc.Graph(figure=fig)])
+    #     case _:
+    #         pass
