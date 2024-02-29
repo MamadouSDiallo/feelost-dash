@@ -82,7 +82,7 @@ layout = html.Div(
                     ],
                 ),
             ),
-            style={"padding": 10, "flex": 3},
+            style={"padding": 10, "flex": 7},
         ),
     ],
     style={"display": "flex", "flexDirection": "row", "gap": "5px", "width": "100%"},
@@ -127,7 +127,7 @@ def datasets_server(datasets_names, number_rows, selected_years, selected_months
         # page_size=20,
         style_table={
             "overflowX": "auto",
-            "maxWidth": "900px",
+            # "maxWidth": "900px",
         },
         # style_cell={
         #     # "overflow": "hidden",
