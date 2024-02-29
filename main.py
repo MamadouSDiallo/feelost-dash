@@ -24,7 +24,7 @@ nav_menu = dbc.Nav(
         dbc.NavLink(children="About FeeLoST", href="/"),
         dbc.NavLink(children="Datasets", href="/datasets"),
         dbc.NavLink(children="Outliers", href="/outliers"),
-        dbc.NavLink(children="Inconsistencies", href="/inconsistencies", disabled=True),
+        dbc.NavLink(children="Inconsistencies", href="/inconsistencies"),
         dbc.NavLink(children="Missingness", href="/missingness", disabled=True),
         dbc.NavLink(children="Feedback", href="/feedback", disabled=True),
     ],
@@ -61,5 +61,5 @@ app.layout = html.Div(
 
 # Run the app
 if __name__ == "__main__":
-    app.run(debug=True)
-    # app.run(debug=True, host="0.0.0.0", port="8080", use_reloader=False)
+    # app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port="8080", use_reloader=False)
