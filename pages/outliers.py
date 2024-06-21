@@ -252,7 +252,7 @@ layout = html.Div(
                     )
                 ),
             ],
-            style={"padding": 10, "flex": 1},
+            style={"padding": 10, "flex": 2},
         ),
         html.Div(
             children=[
@@ -360,7 +360,7 @@ layout = html.Div(
                     style={"padding": 10},
                 ),
             ],
-            style={"padding": 10, "flex": 7},
+            style={"padding": 10, "flex": 6},
         ),
     ],
     style={"display": "flex", "flexDirection": "row", "gap": "5px", "width": "100%"},
